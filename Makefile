@@ -12,6 +12,15 @@ LDFLAGS := -X 'main.version=$(VERSION)' \
            -X 'main.buildTime=$(BUILDTIME)' \
            -X 'main.builder=$(BUILDER)' \
            -X 'main.goversion=$(GOVERSION)'
+OS := $(shell uname)
+
+export PATH := $(PREFIX)/bin:$(PATH)
+ifeq ($(OS), Darwin)
+	export PATH := protoc/protoc-3.1.0-osx-x86_64/bin:$(PATH)
+endif
+ifeq ($(OS), Linux)
+	export PATH := protoc/protoc-3.1.0-linux-x86_64/bin:$(PATH)
+endif
 
 # development tasks
 test:
@@ -56,5 +65,12 @@ install: install_location $(INSTALLED_TARGETS)
 clean:
 	rm -rf bin
 
-all: lint $(TARGETS) install
+$(PREFIX)/bin/protoc-gen-go: install_location
+	go build -o protoc-gen-go vendor/github.com/golang/protobuf/protoc-gen-go/main.go
+	mv protoc-gen-go $(PREFIX)/bin
+
+proto: $(PREFIX)/bin/protoc-gen-go
+	protoc --go_out=plugins=grpc:. common/proto/*.proto
+
+all: lint proto $(TARGETS) install
 .DEFAULT_GOAL:=all
