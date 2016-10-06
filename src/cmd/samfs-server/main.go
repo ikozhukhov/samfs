@@ -7,8 +7,7 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-
-	"samfs/src/samfs"
+	"github.com/smihir/samfs/src/samfs"
 )
 
 func usage() {
