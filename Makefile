@@ -14,12 +14,12 @@ LDFLAGS := -X 'main.version=$(VERSION)' \
            -X 'main.goversion=$(GOVERSION)'
 OS := $(shell uname)
 
-export PATH := $(PREFIX)/bin:$(PATH)
+export PATH := tools/bin:$(PATH)
 ifeq ($(OS), Darwin)
-	export PATH := protoc/protoc-3.1.0-osx-x86_64/bin:$(PATH)
+	export PATH := tools/protoc/protoc-3.1.0-osx-x86_64/bin:$(PATH)
 endif
 ifeq ($(OS), Linux)
-	export PATH := protoc/protoc-3.1.0-linux-x86_64/bin:$(PATH)
+	export PATH := tools/protoc/protoc-3.1.0-linux-x86_64/bin:$(PATH)
 endif
 
 # development tasks
@@ -43,10 +43,10 @@ benchmark:
 	@echo "Running tests..."
 	@go test -bench=. $$(go list ./... | grep -v /vendor/ | grep -v /cmd/)
 
-CMD_SOURCES := $(shell find cmd -name main.go)
-TARGETS := $(patsubst cmd/%/main.go,%,$(CMD_SOURCES))
+CMD_SOURCES := $(shell find src/cmd -name main.go)
+TARGETS := $(patsubst src/cmd/%/main.go,%,$(CMD_SOURCES))
 
-%: cmd/%/main.go
+%: src/cmd/%/main.go
 	go build -ldflags "$(LDFLAGS)" -o $@ $<
 
 lint:
@@ -57,20 +57,21 @@ INSTALLED_TARGETS = $(addprefix $(PREFIX)/bin/, $(TARGETS))
 $(PREFIX)/bin/%: %
 	mv $< $@
 
-install_location: $(PREIX)/bin
+install_location:
 	mkdir -p $(PREFIX)/bin
+	mkdir -p tools/bin
 
 install: install_location $(INSTALLED_TARGETS)
 
 clean:
 	rm -rf bin
 
-$(PREFIX)/bin/protoc-gen-go: install_location
+tools/bin/protoc-gen-go: install_location
 	go build -o protoc-gen-go vendor/github.com/golang/protobuf/protoc-gen-go/main.go
-	mv protoc-gen-go $(PREFIX)/bin
+	mv protoc-gen-go tools/bin/
 
-proto: $(PREFIX)/bin/protoc-gen-go
-	protoc --go_out=plugins=grpc:. common/proto/*.proto
+proto: tools/bin/protoc-gen-go
+	protoc --go_out=plugins=grpc:. src/proto/*.proto
 
 all: lint proto $(TARGETS) install
 .DEFAULT_GOAL:=all

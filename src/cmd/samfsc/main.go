@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/golang/glog"
+
+	"samfs/src/samfs"
 )
 
 func usage() {
@@ -21,6 +23,7 @@ func init() {
 }
 
 func main() {
+	_, _ = samfs.NewClient()
 	e := errors.New("samfs client stub")
 	glog.Errorf(e.Error())
 }
