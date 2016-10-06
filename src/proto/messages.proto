@@ -6,40 +6,32 @@ option java_outer_classname = "MessagesProto";
 
 package messages;
 
-// The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
-  rpc SayHelloClientStream (stream HelloRequest) returns (HelloReply) {}
-  rpc SayHelloServerStream (HelloReply) returns (stream HelloRequest) {}
+// endpoints for the NFS server
+service NFS {
+  rpc Mount  (MountRequest) returns (FileHandleReply) {}
+  rpc Lookup (LookupRequest) returns (FileHandleReply) {}
+
+	//TODO (arman): define input and output
+  rpc Read   (LookupRequest) returns (FileHandleReply) {}
+  rpc Write  (LookupRequest) returns (FileHandleReply) {}
+  rpc Commit (LookupRequest) returns (FileHandleReply) {}
+	rpc Mkdir  (LookupRequest) returns (FileHandleReply) {}
+  rpc Rmdir  (LookupRequest) returns (FileHandleReply) {}
+  rpc Create (LookupRequest) returns (FileHandleReply) {}
+  rpc Remove (LookupRequest) returns (FileHandleReply) {}
 }
 
-// The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
+message MountRequest {
+	string rootDirectory = 1;
 }
 
-// The response message containing the greetings
-message HelloReply {
 
+message LookupRequest {
+  string directoryFileHandle = 1; //handle for directory to be looked in
+	string fileName = 2; //name of file looking for
 }
 
-message ProtoInt {
-  int64 num = 1;
+message FileHandleReply {
+	string fileHandle = 1; //null if file does not exist
 }
 
-message ProtoDouble {
-  double num = 1;
-}
-
-message ProtoString {
-  string name = 1;
-}
-
-message ProtoComplex {
-  int64 num = 1;
-  string name = 2;
-  double dnum = 3;
-  string longerString = 4;
-  repeated string classes = 5;
-}
