@@ -4,8 +4,8 @@ Samfs is a NFS like filesystem designed for CS739.
 ## Installing Go
 The filesystem is written in Go. Instructions to install Go can be found [here](https://golang.org/doc/install#install).
 Nevertheless, here is a small step by step guide:
-- Download Go tarball for your platform from [here]()
-- Extract the taball to directory where you want to keep go, let's call it <TOOLCHAIN>
+- Download Go tarball for your platform from [here](https://golang.org/dl/)
+- Extract the taball to directory where you want to keep go, let's call it "TOOLCHAIN"
 - Now you need to set the following environment variables for Go to function:
   - GOPATH: set it to the directory where you want all your Go code to reside. No Go code you want to compile can reside outside this directory.
   - GOBIN: set it to the directory where you want all the binaries installed by *go install* to be copied. Its a good idea to add GOBIN to PATH so that the installed binaries can be executed easily, also it is required if you are using vim-go for browsing code.
