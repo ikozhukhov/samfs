@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/glog"
 
-	"samfs/src/samfs"
+	"github.com/smihir/samfs/src/samfs"
 )
 
 var (
