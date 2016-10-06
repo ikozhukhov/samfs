@@ -65,6 +65,7 @@ install: install_location $(INSTALLED_TARGETS)
 
 clean:
 	rm -rf bin
+	rm -rf src/proto/*.pb.go
 
 tools/bin/protoc-gen-go: install_location
 	go build -o protoc-gen-go vendor/github.com/golang/protobuf/protoc-gen-go/main.go
