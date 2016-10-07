@@ -20,7 +20,7 @@ ifeq ($(OS), Darwin)
 	TOOLSTRING := osx
 endif
 ifeq ($(OS), Linux)
-	export PATH := tools/protoc/protoc-3.1.0-osx-x86_64/bin:$(PATH)
+	export PATH := tools/protoc/protoc-3.1.0-linux-x86_64/bin:$(PATH)
 	TOOLSTRING := linux
 endif
 
