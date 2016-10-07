@@ -17,9 +17,11 @@ OS := $(shell uname)
 export PATH := tools/bin:$(PATH)
 ifeq ($(OS), Darwin)
 	export PATH := tools/protoc/protoc-3.1.0-osx-x86_64/bin:$(PATH)
+	TOOLSTRING := osx
 endif
 ifeq ($(OS), Linux)
-	export PATH := tools/protoc/protoc-3.1.0-linux-x86_64/bin:$(PATH)
+	export PATH := tools/protoc/protoc-3.1.0-osx-x86_64/bin:$(PATH)
+	TOOLSTRING := linux
 endif
 
 # development tasks
@@ -67,12 +69,9 @@ clean:
 	rm -rf bin
 	rm -rf src/proto/*.pb.go
 
-tools/bin/protoc-gen-go: install_location
-	go build -o protoc-gen-go vendor/github.com/golang/protobuf/protoc-gen-go/main.go
-	mv protoc-gen-go tools/bin/
-
-proto: tools/bin/protoc-gen-go
-	protoc --go_out=plugins=grpc:. src/proto/*.proto
+proto:
+	#protoc src/proto/*.proto --go_out=plugins=grpc2:.
+	tools/protoc/protoc-3.1.0-$(TOOLSTRING)-x86_64/bin/protoc src/proto/*.proto --go_out=plugins=grpc:.
 
 all: lint proto $(TARGETS) install
 .DEFAULT_GOAL:=all
