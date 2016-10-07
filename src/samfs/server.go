@@ -2,14 +2,19 @@ package samfs
 
 import (
 	"os"
+	"path"
 
+	"github.com/boltdb/bolt"
 	"github.com/golang/glog"
 	pb "github.com/smihir/samfs/src/proto"
 	"golang.org/x/net/context"
 )
 
+const dbFileName string = "samfs.db"
+
 type SamFSServer struct {
 	rootDirectory string
+	db            *bolt.DB
 }
 
 var _ pb.NFSServer = &SamFSServer{}
@@ -22,15 +27,34 @@ func NewServer(rootDirectory string) (*SamFSServer, error) {
 
 	glog.Infof("FS root = %s\n", rootDirectory)
 
+	dbPath := path.Join(path.Dir(rootDirectory), dbFileName)
+	db, err := bolt.Open(dbPath, 0600, nil)
+	if err != nil {
+		glog.Errorf("failed to open inode database :: %v", err)
+		return nil, err
+	}
+
 	s := &SamFSServer{
 		rootDirectory: rootDirectory,
+		db:            db,
 	}
 
 	return s, nil
 }
 
+//TODO (arman): run() and stop() where stop closes database
+
 func (s *SamFSServer) Mount(ctx context.Context, req *pb.MountRequest) (*pb.FileHandleReply, error) {
-	return nil, nil
+	fileHandle := &pb.FileHandle{
+		Path:    "/",
+		Version: 0,
+	}
+
+	resp := &pb.FileHandleReply{
+		FileHandle: fileHandle,
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Lookup(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {

@@ -22,12 +22,17 @@ service NFS {
     rpc Rmdir  (LocalDirectoryRequest)  returns (StatusReply) {}
 }
 
+message FileHandle {
+	string path = 1;
+	int64 version = 2;
+}
+
 message MountRequest {
   string rootDirectory = 1;
 }
 
 message ReadRequest {
-  string fileHandle = 1;
+  FileHandle fileHandle = 1;
   int64 offset = 2;
   int64 size = 3;
 }
@@ -37,7 +42,7 @@ message ReadReply {
 }
 
 message WriteRequest {
-  string fileHandle = 1;
+  FileHandle fileHandle = 1;
   int64 offset = 2;
   int64 size = 3;
   bytes data = 4;
@@ -45,20 +50,20 @@ message WriteRequest {
 }
 
 message CommitRequest {
-  string fileHandle = 1;
+  FileHandle fileHandle = 1;
 }
 
 // common requests
 
 message LocalDirectoryRequest {
-  string directoryFileHandle = 1; //directory in which the file/directory will exist in
+  FileHandle directoryFileHandle = 1; //directory in which the file/directory will exist in
   string name = 2; //file/directory we are looking for
 }
 
 // common replies
 
 message FileHandleReply {
-  string fileHandle = 1; //null if file does not exist
+  FileHandle fileHandle = 1; //null if file does not exist
 }
 
 message StatusReply {
