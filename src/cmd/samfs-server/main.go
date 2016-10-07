@@ -10,6 +10,8 @@ import (
 	"github.com/smihir/samfs/src/samfs"
 )
 
+var rootDirectory *string
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: samfs-server -stderrthreshold=[INFO|WARN|FATAL] -log_dir=[string]\n")
 	flag.PrintDefaults()
@@ -18,11 +20,15 @@ func usage() {
 
 func init() {
 	flag.Usage = usage
+	rootDirectory = flag.String("root", "default root", "this is root of the FS")
 	flag.Parse()
 }
 
 func main() {
-	_, _ = samfs.NewServer()
+	if rootDirectory == nil {
+		usage()
+	}
+	_, _ = samfs.NewServer(*rootDirectory)
 	e := errors.New("samfs server stub")
 	glog.Errorf(e.Error())
 }
