@@ -8,26 +8,25 @@ package messages;
 
 // endpoints for the NFS server
 service NFS {
-  rpc Mount  (MountRequest) returns (FileHandleReply) {}
-  rpc Lookup (LookupRequest) returns (FileHandleReply) {}
+    rpc Mount  (MountRequest) returns (FileHandleReply) {}
+    rpc Lookup (LookupRequest) returns (FileHandleReply) {}
 
 	//TODO (arman): define input and output
-  rpc Read   (LookupRequest) returns (FileHandleReply) {}
-  rpc Write  (LookupRequest) returns (FileHandleReply) {}
-  rpc Commit (LookupRequest) returns (FileHandleReply) {}
-	rpc Mkdir  (LookupRequest) returns (FileHandleReply) {}
-  rpc Rmdir  (LookupRequest) returns (FileHandleReply) {}
-  rpc Create (LookupRequest) returns (FileHandleReply) {}
-  rpc Remove (LookupRequest) returns (FileHandleReply) {}
+    rpc Read   (LookupRequest) returns (FileHandleReply) {}
+    rpc Write  (LookupRequest) returns (FileHandleReply) {}
+    rpc Commit (LookupRequest) returns (FileHandleReply) {}
+    rpc Mkdir  (LookupRequest) returns (FileHandleReply) {}
+    rpc Rmdir  (LookupRequest) returns (FileHandleReply) {}
+    rpc Create (LookupRequest) returns (FileHandleReply) {}
+    rpc Remove (LookupRequest) returns (FileHandleReply) {}
 }
 
 message MountRequest {
 	string rootDirectory = 1;
 }
 
-
 message LookupRequest {
-  string directoryFileHandle = 1; //handle for directory to be looked in
+    string directoryFileHandle = 1; //handle for directory to be looked in
 	string fileName = 2; //name of file looking for
 }
 
