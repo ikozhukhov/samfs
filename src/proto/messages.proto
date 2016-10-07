@@ -8,29 +8,59 @@ package messages;
 
 // endpoints for the NFS server
 service NFS {
-    rpc Mount  (MountRequest) returns (FileHandleReply) {}
-    rpc Lookup (LookupRequest) returns (FileHandleReply) {}
+    rpc Mount  (MountRequest)  returns (FileHandleReply) {}
+    rpc Lookup (LocalDirectoryRequest) returns (FileHandleReply) {}
 
-	//TODO (arman): define input and output
-    rpc Read   (LookupRequest) returns (FileHandleReply) {}
-    rpc Write  (LookupRequest) returns (FileHandleReply) {}
-    rpc Commit (LookupRequest) returns (FileHandleReply) {}
-    rpc Mkdir  (LookupRequest) returns (FileHandleReply) {}
-    rpc Rmdir  (LookupRequest) returns (FileHandleReply) {}
-    rpc Create (LookupRequest) returns (FileHandleReply) {}
-    rpc Remove (LookupRequest) returns (FileHandleReply) {}
+    rpc Read   (ReadRequest)   returns (ReadReply) {}
+    rpc Write  (WriteRequest)  returns (StatusReply) {}
+    rpc Commit (CommitRequest) returns (StatusReply) {}
+
+    rpc Create (LocalDirectoryRequest) returns (FileHandleReply) {}
+    rpc Remove (LocalDirectoryRequest) returns (StatusReply) {}
+
+    rpc Mkdir  (LocalDirectoryRequest)  returns (FileHandleReply) {}
+    rpc Rmdir  (LocalDirectoryRequest)  returns (StatusReply) {}
 }
 
 message MountRequest {
-	string rootDirectory = 1;
+  string rootDirectory = 1;
 }
 
-message LookupRequest {
-    string directoryFileHandle = 1; //handle for directory to be looked in
-	string fileName = 2; //name of file looking for
+message ReadRequest {
+  string fileHandle = 1;
+  int64 offset = 2;
+  int64 size = 3;
 }
+
+message ReadReply {
+  bytes data = 1;
+}
+
+message WriteRequest {
+  string fileHandle = 1;
+  int64 offset = 2;
+  int64 size = 3;
+  bytes data = 4;
+  //TODO (arman): do we need to send a clientID of some sort?
+}
+
+message CommitRequest {
+  string fileHandle = 1;
+}
+
+// common requests
+
+message LocalDirectoryRequest {
+  string directoryFileHandle = 1; //directory in which the file/directory will exist in
+  string name = 2; //file/directory we are looking for
+}
+
+// common replies
 
 message FileHandleReply {
-	string fileHandle = 1; //null if file does not exist
+  string fileHandle = 1; //null if file does not exist
 }
 
+message StatusReply {
+  bool success = 1;
+}

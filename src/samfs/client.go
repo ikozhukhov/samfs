@@ -1,8 +1,8 @@
 package samfs
 
-type samfsClient struct{}
+type SamFSClient struct{}
 
-func NewClient() (*samfsClient, error) {
-	c := &samfsClient{}
-	return c, nil
+func NewClient() (*SamFSClient, error) {
+  c := &SamFSClient{}
+  return c, nil
 }
