@@ -33,7 +33,7 @@ func main() {
 	} else if *isclient == true {
 		_, _ = samfs.NewClient()
 	} else {
-		_, _ = samfs.NewServer()
+		_, _ = samfs.NewServer(".")
 	}
 
 	e := errors.New("samfs server stub")

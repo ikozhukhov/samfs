@@ -26,7 +26,7 @@ endif
 
 # development tasks
 test:
-	go test $$(go list ./... | grep -v /vendor/)
+	go test -v $$(go list ./... | grep -v /vendor/)
 
 
 PACKAGES := $(shell find ./* -type d | grep -v vendor)

@@ -1,6 +1,7 @@
 package samfs
 
 import (
+	"net"
 	"os"
 	"path"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	pb "github.com/smihir/samfs/src/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 const dbFileName string = "samfs.db"
@@ -15,6 +17,8 @@ const dbFileName string = "samfs.db"
 type SamFSServer struct {
 	rootDirectory string
 	db            *bolt.DB
+	port          string
+	grpcServer    *grpc.Server
 }
 
 var _ pb.NFSServer = &SamFSServer{}
@@ -37,14 +41,36 @@ func NewServer(rootDirectory string) (*SamFSServer, error) {
 	s := &SamFSServer{
 		rootDirectory: rootDirectory,
 		db:            db,
+		// TODO(mihir): make port number configurable
+		port: ":24100",
 	}
 
 	return s, nil
 }
 
 //TODO (arman): run() and stop() where stop closes database
+func (s *SamFSServer) Run() error {
+	lis, err := net.Listen("tcp", s.port)
+	if err != nil {
+		glog.Fatalf("falied to listen on port :: %s(err=%s)", s.port, err.Error())
+		return err
+	}
+
+	gs := grpc.NewServer()
+	pb.RegisterNFSServer(gs, s)
+	s.grpcServer = gs
+	gs.Serve(lis)
+
+	return nil
+}
+
+func (s *SamFSServer) Stop() error {
+	s.grpcServer.GracefulStop()
+	return nil
+}
 
 func (s *SamFSServer) Mount(ctx context.Context, req *pb.MountRequest) (*pb.FileHandleReply, error) {
+	glog.Info("recevied mount request")
 	fileHandle := &pb.FileHandle{
 		Path:    "/",
 		Version: 0,
