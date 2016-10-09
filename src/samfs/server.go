@@ -201,7 +201,34 @@ func (s *SamFSServer) Commit(ctx context.Context,
 	req *pb.CommitRequest) (*pb.StatusReply, error) {
 	glog.Info("recevied commit request")
 
-	return nil, nil
+	filePath := path.Join(s.rootDirectory, req.FileHandle.Path)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		glog.Errorf("file %s does not exist :: %v\n", req.FileHandle.Path,
+			err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of the file against db
+
+	fd, err := os.OpenFile(filePath, os.O_WRONLY, defaultPermission)
+	if err != nil {
+		glog.Errorf("could not open file %s :: %v\n", req.FileHandle.Path, err)
+		return nil, err
+	}
+	defer fd.Close()
+
+	err = fd.Sync()
+	if err != nil {
+		glog.Errorf("could not perform fsync on file %s :: %v\n",
+			req.FileHandle.Path, err)
+		return nil, err
+	}
+
+	resp := &pb.StatusReply{
+		Success: true,
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Create(ctx context.Context,
