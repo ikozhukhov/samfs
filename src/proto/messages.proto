@@ -39,6 +39,7 @@ message ReadRequest {
 
 message ReadReply {
   bytes data = 1;
+  int64 size = 2;
 }
 
 message WriteRequest {

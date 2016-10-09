@@ -1,6 +1,7 @@
 package samfs
 
 import (
+	"errors"
 	"net"
 	"os"
 	"path"
@@ -123,7 +124,41 @@ func (s *SamFSServer) Read(ctx context.Context,
 	req *pb.ReadRequest) (*pb.ReadReply, error) {
 	glog.Info("received read request")
 
-	return nil, nil
+	filePath := path.Join(s.rootDirectory, req.FileHandle.Path)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		glog.Errorf("file %s does not exist :: %v\n", req.FileHandle.Path,
+			err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of the file against db
+
+	fd, err := os.Open(filePath)
+	if err != nil {
+		glog.Errorf("could not open file %s :: %v\n", req.FileHandle.Path, err)
+		return nil, err
+	}
+	defer fd.Close()
+
+	data := make([]byte, req.Size, req.Size)
+	if data == nil {
+		errStr := "couldn't allocate memory"
+		glog.Errorf(errStr)
+		return nil, errors.New(errStr)
+	}
+
+	n, err := fd.ReadAt(data, req.Offset)
+	if err != nil {
+		glog.Errorf("failed to read file %s :: %v\n", req.FileHandle.Path, err)
+		return nil, err
+	}
+
+	resp := &pb.ReadReply{
+		Data: data[:n],
+		Size: int64(n),
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Write(ctx context.Context,
