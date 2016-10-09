@@ -89,7 +89,34 @@ func (s *SamFSServer) Lookup(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
 	glog.Info("received lookup request")
 
-	return nil, nil
+	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
+	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path,
+			err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of local directory against db
+
+	fsFilePath := path.Join(req.DirectoryFileHandle.Path, req.Name)
+	//TODO (arman): add fsFilePath and its *new* version number to db
+
+	filePath := path.Join(directoryPath, req.Name)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		glog.Errorf("requested file %s does not exist :: %v\n", filePath, err)
+		return nil, err
+	}
+
+	fileHandle := &pb.FileHandle{
+		Path:    fsFilePath,
+		Version: 0, //TODO (arman): return file's version number
+	}
+
+	resp := &pb.FileHandleReply{
+		FileHandle: fileHandle,
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Read(ctx context.Context,
