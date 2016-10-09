@@ -13,7 +13,10 @@ import (
 	"google.golang.org/grpc"
 )
 
-const dbFileName string = "samfs.db"
+const (
+	dbFileName        string      = "samfs.db"
+	defaultPermission os.FileMode = 0666
+)
 
 type SamFSServer struct {
 	rootDirectory string
@@ -165,7 +168,33 @@ func (s *SamFSServer) Write(ctx context.Context,
 	req *pb.WriteRequest) (*pb.StatusReply, error) {
 	glog.Info("recevied write request")
 
-	return nil, nil
+	filePath := path.Join(s.rootDirectory, req.FileHandle.Path)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		glog.Errorf("file %s does not exist :: %v\n", req.FileHandle.Path,
+			err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of the file against db
+
+	fd, err := os.OpenFile(filePath, os.O_WRONLY, defaultPermission)
+	if err != nil {
+		glog.Errorf("could not open file %s :: %v\n", req.FileHandle.Path, err)
+		return nil, err
+	}
+	defer fd.Close()
+
+	_, err = fd.WriteAt(req.Data[:req.Size], req.Offset)
+	if err != nil {
+		glog.Errorf("failed to write file %s :: %v\n", req.FileHandle.Path, err)
+		return nil, err
+	}
+
+	resp := &pb.StatusReply{
+		Success: true,
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Commit(ctx context.Context,
@@ -234,7 +263,7 @@ func (s *SamFSServer) Mkdir(ctx context.Context,
 	//TODO (arman): add fsFilePath and its *new* version number to db
 
 	filePath := path.Join(directoryPath, req.Name)
-	err := os.Mkdir(filePath, 0666)
+	err := os.Mkdir(filePath, defaultPermission)
 	if err != nil {
 		glog.Errorf("Failed to make directory at path %s :: %v\n", filePath, err)
 		return nil, err
