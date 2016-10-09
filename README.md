@@ -1,4 +1,4 @@
-# samfs
+# samfs [![Build Status](https://travis-ci.com/smihir/samfs.svg?token=tBqNgPsKZYi2s5J9Bd2z&branch=master)](https://travis-ci.com/smihir/samfs)
 Samfs is a NFS like filesystem designed for CS739.
 
 ## Installing Go

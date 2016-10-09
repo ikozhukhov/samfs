@@ -18,12 +18,12 @@ type testContext struct {
 	Client     pb.NFSClient
 	Server     *SamFSServer
 	ClientConn *grpc.ClientConn
+	wg         sync.WaitGroup
 }
 
 var TestCtx *testContext
 
 func TestMain(m *testing.M) {
-	var wg sync.WaitGroup
 	flag.Parse()
 
 	// setup
@@ -33,18 +33,12 @@ func TestMain(m *testing.M) {
 	}
 	TestCtx = tCtx
 
-	// run
-	wg.Add(1)
-	go func() {
-		tCtx.Server.Run()
-		wg.Done()
-	}()
 	exitCode := m.Run()
 
 	// teardown
 	tCtx.ClientConn.Close()
 	tCtx.Server.Stop()
-	wg.Wait()
+	tCtx.wg.Wait()
 	os.Exit(exitCode)
 }
 
@@ -57,6 +51,13 @@ func setup() (*testContext, error) {
 		return nil, serr
 	}
 	tCtx.Server = s
+
+	// run server
+	tCtx.wg.Add(1)
+	go func() {
+		tCtx.Server.Run()
+		tCtx.wg.Done()
+	}()
 
 	// setup grpc client to talk to samfs server
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)

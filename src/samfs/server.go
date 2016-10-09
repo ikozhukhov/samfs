@@ -132,11 +132,60 @@ func (s *SamFSServer) Create(ctx context.Context, req *pb.LocalDirectoryRequest)
 }
 
 func (s *SamFSServer) Remove(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
-	return nil, nil
+	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
+	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of local directory against db
+
+	// since we first check whether file exists before using it, we do not need to
+	// update its version number on delete.
+
+	filePath := path.Join(directoryPath, req.Name)
+	err := os.Remove(filePath)
+	if err != nil {
+		glog.Errorf("Failed to remove file at path %s :: %v\n", filePath, err)
+		return nil, err
+	}
+
+	resp := &pb.StatusReply{
+		Success: true,
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Mkdir(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
-	return nil, nil
+	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
+	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of local directory against db
+
+	fsFilePath := path.Join(req.DirectoryFileHandle.Path, req.Name)
+	//TODO (arman): add fsFilePath and its *new* version number to db
+
+	filePath := path.Join(directoryPath, req.Name)
+	err := os.Mkdir(filePath, 0666)
+	if err != nil {
+		glog.Errorf("Failed to make directory at path %s :: %v\n", filePath, err)
+		return nil, err
+	}
+
+	fileHandle := &pb.FileHandle{
+		Path:    fsFilePath,
+		Version: 0, //TODO (arman): return the new version number
+	}
+
+	resp := &pb.FileHandleReply{
+		FileHandle: fileHandle,
+	}
+
+	return resp, nil
 }
 
 func (s *SamFSServer) Rmdir(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
