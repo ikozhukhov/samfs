@@ -132,29 +132,7 @@ func (s *SamFSServer) Create(ctx context.Context, req *pb.LocalDirectoryRequest)
 }
 
 func (s *SamFSServer) Remove(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
-	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
-	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
-		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
-		return nil, err
-	}
-
-	//TODO (arman): check version number of local directory against db
-
-	// since we first check whether file exists before using it, we do not need to
-	// update its version number on delete.
-
-	filePath := path.Join(directoryPath, req.Name)
-	err := os.Remove(filePath)
-	if err != nil {
-		glog.Errorf("Failed to remove file at path %s :: %v\n", filePath, err)
-		return nil, err
-	}
-
-	resp := &pb.StatusReply{
-		Success: true,
-	}
-
-	return resp, nil
+	return s.remove(ctx, req)
 }
 
 func (s *SamFSServer) Mkdir(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
@@ -189,5 +167,33 @@ func (s *SamFSServer) Mkdir(ctx context.Context, req *pb.LocalDirectoryRequest) 
 }
 
 func (s *SamFSServer) Rmdir(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
-	return nil, nil
+	return s.remove(ctx, req)
+}
+
+//common methods
+
+func (s *SamFSServer) remove(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
+	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
+	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
+		return nil, err
+	}
+
+	//TODO (arman): check version number of local directory against db
+
+	// since we first check whether file/directory exists before using it, we do not need to
+	// update its version number on delete.
+
+	filePath := path.Join(directoryPath, req.Name)
+	err := os.Remove(filePath)
+	if err != nil {
+		glog.Errorf("Failed to remove file/directory at path %s :: %v\n", filePath, err)
+		return nil, err
+	}
+
+	resp := &pb.StatusReply{
+		Success: true,
+	}
+
+	return resp, nil
 }
