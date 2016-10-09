@@ -69,8 +69,10 @@ func (s *SamFSServer) Stop() error {
 	return nil
 }
 
-func (s *SamFSServer) Mount(ctx context.Context, req *pb.MountRequest) (*pb.FileHandleReply, error) {
+func (s *SamFSServer) Mount(ctx context.Context,
+	req *pb.MountRequest) (*pb.FileHandleReply, error) {
 	glog.Info("recevied mount request")
+
 	fileHandle := &pb.FileHandle{
 		Path:    "/",
 		Version: 0,
@@ -83,26 +85,42 @@ func (s *SamFSServer) Mount(ctx context.Context, req *pb.MountRequest) (*pb.File
 	return resp, nil
 }
 
-func (s *SamFSServer) Lookup(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
+func (s *SamFSServer) Lookup(ctx context.Context,
+	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
+	glog.Info("received lookup request")
+
 	return nil, nil
 }
 
-func (s *SamFSServer) Read(ctx context.Context, req *pb.ReadRequest) (*pb.ReadReply, error) {
+func (s *SamFSServer) Read(ctx context.Context,
+	req *pb.ReadRequest) (*pb.ReadReply, error) {
+	glog.Info("received read request")
+
 	return nil, nil
 }
 
-func (s *SamFSServer) Write(ctx context.Context, req *pb.WriteRequest) (*pb.StatusReply, error) {
+func (s *SamFSServer) Write(ctx context.Context,
+	req *pb.WriteRequest) (*pb.StatusReply, error) {
+	glog.Info("recevied write request")
+
 	return nil, nil
 }
 
-func (s *SamFSServer) Commit(ctx context.Context, req *pb.CommitRequest) (*pb.StatusReply, error) {
+func (s *SamFSServer) Commit(ctx context.Context,
+	req *pb.CommitRequest) (*pb.StatusReply, error) {
+	glog.Info("recevied commit request")
+
 	return nil, nil
 }
 
-func (s *SamFSServer) Create(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
+func (s *SamFSServer) Create(ctx context.Context,
+	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
+	glog.Info("recevied create request")
+
 	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
 	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
-		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path,
+			err)
 		return nil, err
 	}
 
@@ -131,14 +149,20 @@ func (s *SamFSServer) Create(ctx context.Context, req *pb.LocalDirectoryRequest)
 	return resp, nil
 }
 
-func (s *SamFSServer) Remove(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
+func (s *SamFSServer) Remove(ctx context.Context,
+	req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
+	glog.Info("recevied remove request")
 	return s.remove(ctx, req)
 }
 
-func (s *SamFSServer) Mkdir(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
+func (s *SamFSServer) Mkdir(ctx context.Context,
+	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
+	glog.Info("recevied mkdir request")
+
 	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
 	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
-		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path,
+			err)
 		return nil, err
 	}
 
@@ -166,28 +190,34 @@ func (s *SamFSServer) Mkdir(ctx context.Context, req *pb.LocalDirectoryRequest) 
 	return resp, nil
 }
 
-func (s *SamFSServer) Rmdir(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
+func (s *SamFSServer) Rmdir(ctx context.Context,
+	req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
+	glog.Info("recevied rmdir request")
 	return s.remove(ctx, req)
 }
 
 //common methods
 
-func (s *SamFSServer) remove(ctx context.Context, req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
+func (s *SamFSServer) remove(ctx context.Context,
+	req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
 	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
 	if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
-		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path, err)
+		glog.Errorf("path %s does not exist :: %v\n", req.DirectoryFileHandle.Path,
+			err)
 		return nil, err
 	}
 
 	//TODO (arman): check version number of local directory against db
 
-	// since we first check whether file/directory exists before using it, we do not need to
-	// update its version number on delete.
+	//since we first check whether file/directory exists
+	//before using it, we do not need to
+	//update its version number on delete.
 
 	filePath := path.Join(directoryPath, req.Name)
 	err := os.Remove(filePath)
 	if err != nil {
-		glog.Errorf("Failed to remove file/directory at path %s :: %v\n", filePath, err)
+		glog.Errorf("Failed to remove file/directory at path %s :: %v\n", filePath,
+			err)
 		return nil, err
 	}
 
