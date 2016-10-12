@@ -3,6 +3,7 @@ package samfs
 import (
 	"flag"
 	"os"
+	"os/exec"
 	"path"
 	"sync"
 	"testing"
@@ -127,6 +128,9 @@ func TestSamfs(t *testing.T) {
 		resp, err := TestCtx.Client.Mkdir(ctx, req)
 		if err != nil {
 			t.Fatalf("mkdir failed with error :: %s", err.Error())
+			cmd := exec.Command("tree")
+			out, _ := cmd.CombinedOutput()
+			t.Fatal(string(out))
 			t.Fail()
 		}
 		innerFh = resp.FileHandle
@@ -135,6 +139,9 @@ func TestSamfs(t *testing.T) {
 		directoryPath := path.Join(md, "innerDir")
 		if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
 			t.Fatalf("mkdir did not create a directory %s", directoryPath)
+			cmd := exec.Command("tree")
+			out, _ := cmd.CombinedOutput()
+			t.Fatal(string(out))
 			t.Fail()
 		}
 	})
@@ -157,6 +164,9 @@ func TestSamfs(t *testing.T) {
 		directoryPath := path.Join(md, "innerDir")
 		if _, err := os.Stat(directoryPath); !os.IsNotExist(err) {
 			t.Fatalf("rmdir did not remove a directory %s", directoryPath)
+			cmd := exec.Command("tree")
+			out, _ := cmd.CombinedOutput()
+			t.Fatal(string(out))
 			t.Fail()
 		}
 	})
