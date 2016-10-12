@@ -2,9 +2,11 @@ package samfs
 
 import (
 	"errors"
+	"math/rand"
 	"net"
 	"os"
 	"path"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/golang/glog"
@@ -23,6 +25,10 @@ type SamFSServer struct {
 	db            *bolt.DB
 	port          string
 	grpcServer    *grpc.Server
+
+	//sessionID is randomly generated every time server starts;
+	//it is used to detect server crashes
+	sessionID int64
 }
 
 var _ pb.NFSServer = &SamFSServer{}
@@ -59,6 +65,10 @@ func (s *SamFSServer) Run() error {
 		glog.Fatalf("falied to listen on port :: %s(err=%s)", s.port, err.Error())
 		return err
 	}
+
+	rand.Seed(time.Now().UnixNano())
+	s.sessionID = rand.Int63()
+	glog.Infof("starting new server with sessionID %d", s.sessionID)
 
 	gs := grpc.NewServer()
 	pb.RegisterNFSServer(gs, s)
@@ -191,7 +201,8 @@ func (s *SamFSServer) Write(ctx context.Context,
 	}
 
 	resp := &pb.StatusReply{
-		Success: true,
+		Success:         true,
+		ServerSessionID: s.sessionID,
 	}
 
 	return resp, nil
@@ -225,7 +236,8 @@ func (s *SamFSServer) Commit(ctx context.Context,
 	}
 
 	resp := &pb.StatusReply{
-		Success: true,
+		Success:         true,
+		ServerSessionID: s.sessionID,
 	}
 
 	return resp, nil
