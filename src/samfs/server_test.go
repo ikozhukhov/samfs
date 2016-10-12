@@ -127,10 +127,10 @@ func TestSamfs(t *testing.T) {
 		}
 		resp, err := TestCtx.Client.Mkdir(ctx, req)
 		if err != nil {
-			t.Fatalf("mkdir failed with error :: %s", err.Error())
 			cmd := exec.Command("tree")
 			out, _ := cmd.CombinedOutput()
-			t.Fatal(string(out))
+			t.Error(string(out))
+			t.Fatalf("mkdir failed with error :: %s", err.Error())
 			t.Fail()
 		}
 		innerFh = resp.FileHandle
@@ -138,10 +138,10 @@ func TestSamfs(t *testing.T) {
 		// check if directory is actually created
 		directoryPath := path.Join(md, "innerDir")
 		if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
-			t.Fatalf("mkdir did not create a directory %s", directoryPath)
 			cmd := exec.Command("tree")
 			out, _ := cmd.CombinedOutput()
-			t.Fatal(string(out))
+			t.Error(string(out))
+			t.Fatalf("mkdir did not create a directory %s", directoryPath)
 			t.Fail()
 		}
 	})
@@ -163,10 +163,10 @@ func TestSamfs(t *testing.T) {
 		// check if directory is actually removed
 		directoryPath := path.Join(md, "innerDir")
 		if _, err := os.Stat(directoryPath); !os.IsNotExist(err) {
-			t.Fatalf("rmdir did not remove a directory %s", directoryPath)
 			cmd := exec.Command("tree")
 			out, _ := cmd.CombinedOutput()
-			t.Fatal(string(out))
+			t.Error(string(out))
+			t.Fatalf("rmdir did not remove a directory %s", directoryPath)
 			t.Fail()
 		}
 	})
