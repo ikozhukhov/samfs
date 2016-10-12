@@ -17,10 +17,8 @@ package samfs
 //    }
 //    return generation;
 //}
-import (
-	"C"
-	"syscall"
-)
+import "C"
+import "syscall"
 
 func getGenerationNumber(filePath string) (uint32, error) {
 	cg, err := C.getGenerationNumber(C.CString(filePath))
