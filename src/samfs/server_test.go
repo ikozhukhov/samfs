@@ -136,8 +136,9 @@ func TestSamfs(t *testing.T) {
 		innerFh = resp.FileHandle
 
 		// check if directory is actually created
-		directoryPath := path.Join(md, "innerDir")
+		directoryPath := path.Join(md, "innerdir")
 		if _, err := os.Stat(directoryPath); os.IsNotExist(err) {
+			t.Error(err.Error())
 			cmd := exec.Command("tree")
 			out, _ := cmd.CombinedOutput()
 			t.Error(string(out))
