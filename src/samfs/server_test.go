@@ -162,7 +162,7 @@ func TestSamfs(t *testing.T) {
 
 		// check if directory is actually removed
 		directoryPath := path.Join(md, "innerDir")
-		if _, err := os.Stat(directoryPath); !os.IsNotExist(err) {
+		if _, err := os.Stat(directoryPath); os.IsExist(err) {
 			cmd := exec.Command("tree")
 			out, _ := cmd.CombinedOutput()
 			t.Error(string(out))
