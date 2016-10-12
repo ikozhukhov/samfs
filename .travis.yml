@@ -1,5 +1,8 @@
 language: go
 sudo: required
+before_install:
+- sudo apt-get update -q
+- sudo apt-get install tree -y
 os:
 - linux
 - osx
