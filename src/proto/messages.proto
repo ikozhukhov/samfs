@@ -69,4 +69,5 @@ message FileHandleReply {
 
 message StatusReply {
   bool success = 1;
+  int64 serverSessionID = 2;
 }

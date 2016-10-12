@@ -2,11 +2,12 @@ package samfs
 
 import (
 	"errors"
+	"math/rand"
 	"net"
 	"os"
 	"path"
+	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/golang/glog"
 	pb "github.com/smihir/samfs/src/proto"
 	"golang.org/x/net/context"
@@ -20,9 +21,13 @@ const (
 
 type SamFSServer struct {
 	rootDirectory string
-	db            *bolt.DB
+	db            *DB
 	port          string
 	grpcServer    *grpc.Server
+
+	//sessionID is randomly generated every time server starts;
+	//it is used to detect server crashes
+	sessionID int64
 }
 
 var _ pb.NFSServer = &SamFSServer{}
@@ -36,9 +41,9 @@ func NewServer(rootDirectory string) (*SamFSServer, error) {
 	glog.Infof("FS root = %s\n", rootDirectory)
 
 	dbPath := path.Join(path.Dir(rootDirectory), dbFileName)
-	db, err := bolt.Open(dbPath, 0600, nil)
+	db, err := NewDB(dbPath)
 	if err != nil {
-		glog.Errorf("failed to open inode database :: %v", err)
+		glog.Errorf("failed to create new instance of database :: %v", err)
 		return nil, err
 	}
 
@@ -59,6 +64,10 @@ func (s *SamFSServer) Run() error {
 		glog.Fatalf("falied to listen on port :: %s(err=%s)", s.port, err.Error())
 		return err
 	}
+
+	rand.Seed(time.Now().UnixNano())
+	s.sessionID = rand.Int63()
+	glog.Infof("starting new server with sessionID %d", s.sessionID)
 
 	gs := grpc.NewServer()
 	pb.RegisterNFSServer(gs, s)
@@ -191,7 +200,8 @@ func (s *SamFSServer) Write(ctx context.Context,
 	}
 
 	resp := &pb.StatusReply{
-		Success: true,
+		Success:         true,
+		ServerSessionID: s.sessionID,
 	}
 
 	return resp, nil
@@ -225,7 +235,8 @@ func (s *SamFSServer) Commit(ctx context.Context,
 	}
 
 	resp := &pb.StatusReply{
-		Success: true,
+		Success:         true,
+		ServerSessionID: s.sessionID,
 	}
 
 	return resp, nil
