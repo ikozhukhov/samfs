@@ -148,7 +148,7 @@ func TestSamfs(t *testing.T) {
 	})
 
 	t.Run("InodeGenerationNumbers", func(t *testing.T) {
-		i, g, err := TestCtx.Server.GetInodeAndGenerationNumbers(md)
+		i, g, err := GetInodeAndGenerationNumbers(md)
 		if err != nil {
 			t.Fatalf("failed to get inode and generation numbers for %s :: %s",
 				md, err.Error())

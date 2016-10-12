@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"syscall"
 	"time"
 
 	"github.com/golang/glog"
@@ -356,18 +355,4 @@ func (s *SamFSServer) remove(ctx context.Context,
 	}
 
 	return resp, nil
-}
-
-func (s *SamFSServer) GetInodeAndGenerationNumbers(filePath string) (uint64, int, error) {
-	var stat syscall.Stat_t
-	if err := syscall.Stat(filePath, &stat); err != nil {
-		return 0, 0, err
-	}
-
-	genNumber, err := getGenerationNumber(filePath)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return stat.Ino, genNumber, nil
 }
