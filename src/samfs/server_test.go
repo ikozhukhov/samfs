@@ -147,6 +147,17 @@ func TestSamfs(t *testing.T) {
 		}
 	})
 
+	t.Run("InodeGenerationNumbers", func(t *testing.T) {
+		i, g, err := TestCtx.Server.GetInodeAndGenerationNumbers(md)
+		if err != nil {
+			t.Fatalf("failed to get inode and generation numbers for %s :: %s",
+				md, err.Error())
+			t.Fail()
+		} else {
+			t.Logf("inode: %d, generation number: %d", i, g)
+		}
+	})
+
 	t.Run("Rmdir", func(t *testing.T) {
 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 		// according to the spec. fh should be of parent of the sub-directory
