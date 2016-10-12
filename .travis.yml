@@ -1,8 +1,8 @@
 language: go
 sudo: required
 before_install:
-- sudo apt-get update -q
-- sudo apt-get install tree -y
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -q ; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install tree -y ; fi
 os:
 - linux
 - osx
