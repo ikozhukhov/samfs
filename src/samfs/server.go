@@ -8,7 +8,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/golang/glog"
 	pb "github.com/smihir/samfs/src/proto"
 	"golang.org/x/net/context"
@@ -22,7 +21,7 @@ const (
 
 type SamFSServer struct {
 	rootDirectory string
-	db            *bolt.DB
+	db            *DB
 	port          string
 	grpcServer    *grpc.Server
 
@@ -42,9 +41,9 @@ func NewServer(rootDirectory string) (*SamFSServer, error) {
 	glog.Infof("FS root = %s\n", rootDirectory)
 
 	dbPath := path.Join(path.Dir(rootDirectory), dbFileName)
-	db, err := bolt.Open(dbPath, 0600, nil)
+	db, err := NewDB(dbPath)
 	if err != nil {
-		glog.Errorf("failed to open inode database :: %v", err)
+		glog.Errorf("failed to create new instance of database :: %v", err)
 		return nil, err
 	}
 
