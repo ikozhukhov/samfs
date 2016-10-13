@@ -8,8 +8,9 @@ package messages;
 
 // endpoints for the NFS server
 service NFS {
-    rpc Mount  (MountRequest)  returns (FileHandleReply) {}
-    rpc Lookup (LocalDirectoryRequest) returns (FileHandleReply) {}
+    rpc Mount   (MountRequest)  returns (FileHandleReply) {}
+    rpc Lookup  (LocalDirectoryRequest) returns (FileHandleReply) {}
+    rpc GetAttr (FileHandleRequest) returns (GetAttrReply) {}
 
     rpc Read   (ReadRequest)   returns (ReadReply) {}
     rpc Write  (WriteRequest)  returns (StatusReply) {}
@@ -26,6 +27,12 @@ message FileHandle {
 	string path = 1;
 	uint64 inodeNumber = 2;
 	uint32 generationNumber = 3;
+}
+
+// requests
+
+message FileHandleRequest {
+  FileHandle fileHandle = 1;
 }
 
 message MountRequest {
@@ -60,6 +67,16 @@ message CommitRequest {
 message LocalDirectoryRequest {
   FileHandle directoryFileHandle = 1; //directory in which the file/directory will exist in
   string name = 2; //file/directory we are looking for
+}
+
+// replies
+message GetAttrReply {
+    string name = 1;
+    int64 size = 2;
+    uint32 mode = 3;
+    int64 modificationTimeSec = 4;
+    int32 modificationTimeNsec = 5;
+    bool isDir = 6;
 }
 
 // common replies

@@ -129,6 +129,36 @@ func (s *SamFSServer) Lookup(ctx context.Context,
 	return resp, nil
 }
 
+func (s *SamFSServer) GetAttr(ctx context.Context,
+	req *pb.FileHandleRequest) (*pb.GetAttrReply, error) {
+	glog.Info("received read request")
+
+	//validate incoming file handle
+	err := s.verifyFileHandle(req.FileHandle)
+	if err != nil {
+		glog.Errorf(err.Error())
+		return nil, err
+	}
+
+	filePath := path.Join(s.rootDirectory, req.FileHandle.Path)
+	info, err := os.Stat(filePath)
+	if err != nil {
+		glog.Errorf("could not get stat on file %s :: %v\n", filePath, err)
+		return nil, err
+	}
+
+	attr := &pb.GetAttrReply{
+		Name:                 info.Name(),
+		Size:                 info.Size(),
+		Mode:                 uint32(info.Mode()),
+		ModificationTimeSec:  int64(info.ModTime().Second()),
+		ModificationTimeNsec: int32(info.ModTime().Nanosecond()),
+		IsDir:                info.IsDir(),
+	}
+
+	return attr, nil
+}
+
 func (s *SamFSServer) Read(ctx context.Context,
 	req *pb.ReadRequest) (*pb.ReadReply, error) {
 	glog.Info("received read request")
