@@ -40,17 +40,20 @@ func (c *SamFs) SetDebug(debug bool) {
 func (c *SamFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr,
 	fuse.Status) {
 
+	glog.Info("GetAttr called")
 	return nil, fuse.OK
 }
 
 func (c *SamFs) Truncate(path string, size uint64,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Truncate called")
 	return fuse.EINVAL
 }
 
 func (c *SamFs) Utimens(name string, atime *time.Time, mtime *time.Time,
 	context *fuse.Context) fuse.Status {
+	glog.Info("Utimens called")
 
 	return fuse.OK
 }
@@ -58,68 +61,80 @@ func (c *SamFs) Utimens(name string, atime *time.Time, mtime *time.Time,
 func (c *SamFs) Chown(name string, uid uint32, gid uint32,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Chown called")
 	return fuse.OK
 }
 
 func (c *SamFs) Chmod(name string, mode uint32,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Chmod called")
 	return fuse.OK
 }
 
 func (c *SamFs) Access(name string, mode uint32,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Access called")
 	return fuse.OK
 }
 
 func (c *SamFs) Link(orig string, newName string,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Link called")
 	return fuse.OK
 }
 
 func (c *SamFs) Rmdir(path string, context *fuse.Context) fuse.Status {
+	glog.Info("Rmdir called")
 	return fuse.OK
 }
 
 func (c *SamFs) Mkdir(path string, mode uint32,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Mkdir called")
 	return fuse.OK
 }
 
 func (c *SamFs) Rename(oldName string, newName string,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Rename called")
 	return fuse.OK
 }
 
 func (c *SamFs) Unlink(name string, context *fuse.Context) fuse.Status {
+	glog.Info("Unlink called")
 	return fuse.OK
 }
 
 func (c *SamFs) GetXAttr(name string, attribute string,
 	context *fuse.Context) ([]byte, fuse.Status) {
 
+	glog.Info("GetXAttr called")
 	return []byte{}, fuse.OK
 }
 
 func (c *SamFs) RemoveXAttr(name string, attr string,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("RemoveXAttr called")
 	return fuse.OK
 }
 
 func (c *SamFs) SetXAttr(name string, attr string, data []byte, flags int,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("SetXAttr called")
 	return fuse.OK
 }
 
 func (c *SamFs) ListXAttr(name string, context *fuse.Context) ([]string,
 	fuse.Status) {
 
+	glog.Info("GetAttr called")
 	return []string{}, fuse.OK
 }
 
@@ -128,38 +143,45 @@ func (c *SamFs) OnMount(nodefs *pathfs.PathNodeFs) {
 }
 
 func (c *SamFs) OnUnmount() {
+	glog.Info("unmount okay")
 }
 
 func (c *SamFs) Open(name string, flags uint32,
 	context *fuse.Context) (nodefs.File, fuse.Status) {
 
+	glog.Info("Open called")
 	return nil, fuse.OK
 }
 
 func (c *SamFs) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry,
 	fuse.Status) {
 
+	glog.Info("OpenDir called")
 	return nil, fuse.OK
 }
 
 func (c *SamFs) Create(name string, flags uint32, mode uint32,
 	context *fuse.Context) (nodefs.File, fuse.Status) {
 
+	glog.Info("Create called")
 	return nil, fuse.OK
 }
 
 func (c *SamFs) Symlink(pointedTo string, linkName string,
 	context *fuse.Context) fuse.Status {
 
+	glog.Info("Symlink called")
 	return fuse.OK
 }
 
 func (c *SamFs) Readlink(name string, context *fuse.Context) (string,
 	fuse.Status) {
 
+	glog.Info("Readlink called")
 	return "", fuse.OK
 }
 
 func (c *SamFs) StatFs(name string) *fuse.StatfsOut {
+	glog.Info("StatFs called")
 	return &fuse.StatfsOut{}
 }
