@@ -31,7 +31,10 @@ func main() {
 	if *isclient == false && *isserver == false {
 		flag.Usage()
 	} else if *isclient == true {
-		_, _ = samfs.NewClient()
+		server := "127.0.0.1"
+		port := "24100"
+		dir := "/trash"
+		_, _ = samfs.NewClient(&server, &port, &dir)
 	} else {
 		_, _ = samfs.NewServer(".")
 	}
