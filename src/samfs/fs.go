@@ -9,9 +9,15 @@ import (
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
+	pb "github.com/smihir/samfs/src/proto"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
-type SamFsOptions struct{}
+type SamFsOptions struct {
+	server string
+	port   string
+}
 
 type SamFs struct {
 	pathfs.FileSystem
@@ -19,13 +25,26 @@ type SamFs struct {
 	cacheLock sync.RWMutex
 	fileCache map[string]*SamFsFileData
 	options   *SamFsOptions
+
+	nfsClient  pb.NFSClient
+	clientConn *grpc.ClientConn
 }
 
-func NewSamFs(opts *SamFsOptions) *SamFs {
-	return &SamFs{
+func NewSamFs(opts *SamFsOptions) (*SamFs, error) {
+	samFs := &SamFs{
 		options:   opts,
 		fileCache: make(map[string]*SamFsFileData),
 	}
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	conn, err := grpc.DialContext(ctx, opts.server+":"+opts.port,
+		grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	samFs.nfsClient = pb.NewNFSClient(conn)
+	samFs.clientConn = conn
+
+	return samFs, nil
 }
 
 func (c *SamFs) SetDebug(debug bool) {
@@ -139,6 +158,7 @@ func (c *SamFs) ListXAttr(name string, context *fuse.Context) ([]string,
 }
 
 func (c *SamFs) OnMount(nodefs *pathfs.PathNodeFs) {
+	c.clientConn.Close()
 	glog.Info("mount ok")
 }
 
