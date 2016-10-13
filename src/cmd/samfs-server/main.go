@@ -28,7 +28,8 @@ func main() {
 	if rootDirectory == nil {
 		usage()
 	}
-	_, _ = samfs.NewServer(*rootDirectory)
+	s, _ := samfs.NewServer(*rootDirectory)
+	s.Run()
 	e := errors.New("samfs server stub")
 	glog.Errorf(e.Error())
 }

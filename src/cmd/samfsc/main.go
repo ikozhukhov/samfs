@@ -16,13 +16,15 @@ func usage() {
 	os.Exit(2)
 }
 
-func init() {
-	flag.Usage = usage
-	flag.Parse()
-}
-
 func main() {
-	_, _ = samfs.NewClient()
+	flag.Usage = usage
+	server := flag.String("server", "127.0.0.1", "server IP or name")
+	port := flag.String("port", "24100", "server port")
+	flag.Parse()
+	_, err := samfs.NewClient(server, port)
+	if err != nil {
+		glog.Errorf("connection failed : %s", err.Error())
+	}
 	e := errors.New("samfs client stub")
 	glog.Errorf(e.Error())
 }
