@@ -24,6 +24,7 @@ func main() {
 	client, err := samfs.NewClient(server, port, mountDir)
 	if err != nil {
 		glog.Errorf("connection failed : %s", err.Error())
+		os.Exit(1)
 	}
 	client.Run()
 }
