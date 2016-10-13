@@ -125,23 +125,6 @@ func (db *DB) writeToDisk() error {
 	return nil
 }
 
-func flush(path string) error {
-	fd, err := os.Open(path)
-	if err != nil {
-		glog.Errorf("failed to open file/dir at path %s :: %v\n", path, err)
-		return err
-	}
-	defer fd.Close()
-
-	err = fd.Sync()
-	if err != nil {
-		glog.Errorf("could not fsync file/dir at path %s :: %v\n", path, err)
-		return err
-	}
-
-	return nil
-}
-
 //Lookup returns -1 if path does not exist in the database.
 func (db *DB) Lookup(path string) int64 {
 	path = strings.TrimSpace(path)

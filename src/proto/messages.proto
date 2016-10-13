@@ -24,7 +24,8 @@ service NFS {
 
 message FileHandle {
 	string path = 1;
-	int64 version = 2;
+	uint64 inodeNumber = 2;
+	uint32 generationNumber = 3;
 }
 
 message MountRequest {
