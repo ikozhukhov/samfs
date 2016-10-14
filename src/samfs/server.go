@@ -144,7 +144,7 @@ func (s *SamFSServer) GetAttr(ctx context.Context,
 	defer func() {
 		e := syscall.Close(fd)
 		if e != nil {
-			glog.Error("unable to close file %s :: %s", filePath,
+			glog.Errorf("unable to close file %s :: %s", filePath,
 				e.Error())
 		}
 	}()
@@ -160,21 +160,7 @@ func (s *SamFSServer) GetAttr(ctx context.Context,
 		return nil, err
 	}
 
-	attr := &pb.GetAttrReply{
-		Ino:       uint64(stat.Ino),
-		Size:      uint64(stat.Size),
-		Blocks:    uint64(stat.Blocks),
-		Atime:     uint64(stat.Atim.Sec),
-		Mtime:     uint64(stat.Mtim.Sec),
-		Ctime:     uint64(stat.Ctim.Sec),
-		Atimensec: uint32(stat.Atim.Nsec),
-		Mtimensec: uint32(stat.Mtim.Nsec),
-		Ctimensec: uint32(stat.Ctim.Nsec),
-		Mode:      uint32(stat.Mode),
-		Nlink:     uint32(stat.Nlink),
-		Rdev:      uint32(stat.Rdev),
-		Blksize:   uint32(stat.Blksize),
-	}
+	attr := StatToProtoAttr(&stat)
 
 	return attr, nil
 }

@@ -72,22 +72,14 @@ func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 		glog.Errorf(`failed to get attributes of file "%s" :: %s`, name, err.Error())
 		return nil, fuse.EBUSY
 	}
-	return &fuse.Attr{
-		Ino:       resp.Ino,
-		Size:      resp.Size,
-		Blocks:    resp.Blocks,
-		Atime:     resp.Atime,
-		Mtime:     resp.Mtime,
-		Ctime:     resp.Ctime,
-		Atimensec: resp.Atimensec,
-		Mtimensec: resp.Mtimensec,
-		Ctimensec: resp.Ctimensec,
-		Mode:      resp.Mode,
-		Nlink:     resp.Nlink,
-		Rdev:      resp.Rdev,
-		Blksize:   resp.Blksize,
-		Owner:     fContext.Owner,
-	}, fuse.OK
+
+	fAttr := ProtoToFuseAttr(resp)
+	// TODO(mihir): keep the owner as the user who started the client process, not
+	// the owner of the process who is calling the command which in turn calls this
+	// function
+	fAttr.Owner = fContext.Owner
+
+	return fAttr, fuse.OK
 }
 
 func (c *SamFs) Truncate(path string, size uint64,
