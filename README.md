@@ -11,10 +11,10 @@ Nevertheless, here is a small step by step guide:
   - GOBIN: set it to the directory where you want all the binaries installed by *go install* to be copied. Its a good idea to add GOBIN to PATH so that the installed binaries can be executed easily, also it is required if you are using vim-go for browsing code.
   - GOROOT: this is required to be set to the root of your Go installation unless you have installed Go at **/usr/local/go**
 ```
-export GOROOT = <TOOLCHAIN>/go
-export GOPATH = <Path to directory where you want all your go code>
-export GOBIN = <Path to directory where binaries compiled by *go install* are placed>
-export PATH = <TOOLCHAIN>/go/bin:$GOBIN:$PATH
+export GOROOT=<TOOLCHAIN>/go
+export GOPATH=<Path to directory where you want all your go code>
+export GOBIN=<Path to directory where binaries compiled by *go install* are placed>
+export PATH=<TOOLCHAIN>/go/bin:$GOBIN:$PATH
 ```
 
 ## Downloading samfs for development
