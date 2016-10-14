@@ -19,11 +19,18 @@ func NewClient(server, port, mountDir *string) (*SamFSClient, error) {
 	if fsErr != nil {
 		return nil, fsErr
 	}
-	pathFs := pathfs.NewPathNodeFs(samFS, nil)
-	connector := nodefs.NewFileSystemConnector(pathFs.Root(), nil)
+	pOpts := pathfs.PathNodeFsOptions{
+		Debug: true,
+	}
+	pathFs := pathfs.NewPathNodeFs(samFS, &pOpts)
+	opts := nodefs.Options{
+		Debug: true,
+	}
+	connector := nodefs.NewFileSystemConnector(pathFs.Root(), &opts)
+
 	mountOpts := &fuse.MountOptions{
 		AllowOther: true,
-		Name:       "samfs:",
+		Name:       "samfs://" + *server + ":" + *port,
 	}
 	fuseServer, err := fuse.NewServer(connector.RawFS(), *mountDir, mountOpts)
 	if err != nil {

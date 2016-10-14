@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"syscall"
 	"time"
 
 	"github.com/golang/glog"
@@ -73,9 +74,7 @@ func (s *SamFSServer) Run() error {
 	gs := grpc.NewServer()
 	pb.RegisterNFSServer(gs, s)
 	s.grpcServer = gs
-	gs.Serve(lis)
-
-	return nil
+	return gs.Serve(lis)
 }
 
 func (s *SamFSServer) Stop() error {
@@ -131,7 +130,7 @@ func (s *SamFSServer) Lookup(ctx context.Context,
 
 func (s *SamFSServer) GetAttr(ctx context.Context,
 	req *pb.FileHandleRequest) (*pb.GetAttrReply, error) {
-	glog.Info("received read request")
+	glog.Info("received GetAttr request")
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -141,19 +140,40 @@ func (s *SamFSServer) GetAttr(ctx context.Context,
 	}
 
 	filePath := path.Join(s.rootDirectory, req.FileHandle.Path)
-	info, err := os.Stat(filePath)
-	if err != nil {
-		glog.Errorf("could not get stat on file %s :: %v\n", filePath, err)
+	fd, oErr := syscall.Open(filePath, syscall.O_RDONLY, 0)
+	defer func() {
+		e := syscall.Close(fd)
+		if e != nil {
+			glog.Error("unable to close file %s :: %s", filePath,
+				e.Error())
+		}
+	}()
+
+	if oErr != nil {
+		glog.Errorf("could not get open file %s :: %v", filePath, oErr)
+		return nil, oErr
+	}
+	var stat syscall.Stat_t
+	fsErr := syscall.Fstat(fd, &stat)
+	if fsErr != nil {
+		glog.Errorf("could not get stat on file %s :: %v", filePath, fsErr)
 		return nil, err
 	}
 
 	attr := &pb.GetAttrReply{
-		Name:                 info.Name(),
-		Size:                 info.Size(),
-		Mode:                 uint32(info.Mode()),
-		ModificationTimeSec:  int64(info.ModTime().Second()),
-		ModificationTimeNsec: int32(info.ModTime().Nanosecond()),
-		IsDir:                info.IsDir(),
+		Ino:       uint64(stat.Ino),
+		Size:      uint64(stat.Size),
+		Blocks:    uint64(stat.Blocks),
+		Atime:     uint64(stat.Atim.Sec),
+		Mtime:     uint64(stat.Mtim.Sec),
+		Ctime:     uint64(stat.Ctim.Sec),
+		Atimensec: uint32(stat.Atim.Nsec),
+		Mtimensec: uint32(stat.Mtim.Nsec),
+		Ctimensec: uint32(stat.Ctim.Nsec),
+		Mode:      uint32(stat.Mode),
+		Nlink:     uint32(stat.Nlink),
+		Rdev:      uint32(stat.Rdev),
+		Blksize:   uint32(stat.Blksize),
 	}
 
 	return attr, nil

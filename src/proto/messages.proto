@@ -71,12 +71,19 @@ message LocalDirectoryRequest {
 
 // replies
 message GetAttrReply {
-    string name = 1;
-    int64 size = 2;
-    uint32 mode = 3;
-    int64 modificationTimeSec = 4;
-    int32 modificationTimeNsec = 5;
-    bool isDir = 6;
+  uint64 Ino = 1;
+  uint64 Size = 2;
+  uint64 Blocks = 3;
+  uint64 Atime = 4;
+  uint64 Mtime = 5;
+  uint64 Ctime = 6;
+  uint32 Atimensec = 7;
+  uint32 Mtimensec = 8;
+  uint32 Ctimensec = 9;
+  uint32 Mode = 10;
+  uint32 Nlink = 11;
+  uint32 Rdev = 12;
+  uint32 Blksize = 13;
 }
 
 // common replies

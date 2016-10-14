@@ -28,6 +28,8 @@ type SamFs struct {
 
 	nfsClient  pb.NFSClient
 	clientConn *grpc.ClientConn
+
+	rootfh pb.FileHandle
 }
 
 func NewSamFs(opts *SamFsOptions) (*SamFs, error) {
@@ -35,9 +37,8 @@ func NewSamFs(opts *SamFsOptions) (*SamFs, error) {
 		options:   opts,
 		fileCache: make(map[string]*SamFsFileData),
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	conn, err := grpc.DialContext(ctx, opts.server+":"+opts.port,
-		grpc.WithInsecure())
+	conn, err := grpc.DialContext(context.Background(), opts.server+":"+opts.port,
+		grpc.WithInsecure(), grpc.WithBackoffMaxDelay(120*time.Second))
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +57,37 @@ func (c *SamFs) SetDebug(debug bool) {
 // If the filesystem wants to implement hard-links, it should
 // return consistent non-zero FileInfo.Ino data.  Using
 // hardlinks incurs a performance hit.
-func (c *SamFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr,
+func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 	fuse.Status) {
 
-	glog.Info("GetAttr called")
-	return nil, fuse.OK
+	var fh *pb.FileHandle
+	glog.Infof(`GetAttr called on "%s"`, name)
+	if name == "" {
+		fh = &c.rootfh
+	}
+	resp, err := c.nfsClient.GetAttr(context.Background(), &pb.FileHandleRequest{
+		FileHandle: fh,
+	})
+	if err != nil {
+		glog.Errorf(`failed to get attributes of file "%s" :: %s`, name, err.Error())
+		return nil, fuse.EBUSY
+	}
+	return &fuse.Attr{
+		Ino:       resp.Ino,
+		Size:      resp.Size,
+		Blocks:    resp.Blocks,
+		Atime:     resp.Atime,
+		Mtime:     resp.Mtime,
+		Ctime:     resp.Ctime,
+		Atimensec: resp.Atimensec,
+		Mtimensec: resp.Mtimensec,
+		Ctimensec: resp.Ctimensec,
+		Mode:      resp.Mode,
+		Nlink:     resp.Nlink,
+		Rdev:      resp.Rdev,
+		Blksize:   resp.Blksize,
+		Owner:     fContext.Owner,
+	}, fuse.OK
 }
 
 func (c *SamFs) Truncate(path string, size uint64,
@@ -158,11 +185,18 @@ func (c *SamFs) ListXAttr(name string, context *fuse.Context) ([]string,
 }
 
 func (c *SamFs) OnMount(nodefs *pathfs.PathNodeFs) {
-	c.clientConn.Close()
-	glog.Info("mount ok")
+	glog.Info("OnMount called")
+	resp, err := c.nfsClient.Mount(context.Background(), &pb.MountRequest{})
+	if err != nil {
+		glog.Fatalf("failed to mount the remote filesystem :: %s", err.Error())
+		c.clientConn.Close()
+		return
+	}
+	c.rootfh = *resp.FileHandle
 }
 
 func (c *SamFs) OnUnmount() {
+	c.clientConn.Close()
 	glog.Info("unmount okay")
 }
 
