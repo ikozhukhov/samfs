@@ -1,8 +1,8 @@
 package samfs
 
 import (
+	"strings"
 	"sync"
-	//"syscall"
 	"time"
 
 	"github.com/golang/glog"
@@ -51,6 +51,57 @@ func NewSamFs(opts *SamFsOptions) (*SamFs, error) {
 func (c *SamFs) SetDebug(debug bool) {
 }
 
+func (c *SamFs) getFileHandle(name string) (*pb.FileHandle, fuse.Status) {
+
+	if name == "" {
+		return &c.rootfh, fuse.OK
+	}
+	parentFh := &c.rootfh
+
+	path := strings.Split(name, "/")
+	for _, fname := range path {
+		resp, err := c.nfsClient.Lookup(context.Background(), &pb.LocalDirectoryRequest{
+			DirectoryFileHandle: parentFh,
+			Name:                fname,
+		})
+		if err != nil {
+			glog.Errorf(`failed to lookup file "%s" :: %s`, fname, err.Error())
+			// error code 5 implies the file does not exist
+			if grpc.Code(err) == 5 {
+				return nil, fuse.ENOENT
+			}
+			// TODO(mihir): maybe check for more error codes and translate to appropriate
+			// fuse statuses
+			return nil, fuse.EIO
+		}
+		parentFh = resp.FileHandle
+	}
+	return parentFh, fuse.OK
+}
+
+func (c *SamFs) getParentHandle(name string) (*pb.FileHandle, fuse.Status) {
+
+	if name == "" {
+		// there is no parent of root as far as samfs is concerned
+		return nil, fuse.OK
+	}
+
+	path := strings.Split(name, "/")
+
+	// if directory is directly under root, then the parent is root
+	if len(path) == 1 {
+		return &c.rootfh, fuse.OK
+	}
+
+	// remove the name of the current file from the slice, so that we get the
+	// path to the parent
+	myName := path[len(path)-1]
+	parentPath := strings.TrimSuffix(name, "/"+myName)
+	glog.Infof("getParentHandle: name %s, parentPath %s", name, parentPath)
+
+	return c.getFileHandle(parentPath)
+}
+
 // Attributes.  This function is the main entry point, through
 // which FUSE discovers which files and directories exist.
 //
@@ -60,17 +111,17 @@ func (c *SamFs) SetDebug(debug bool) {
 func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 	fuse.Status) {
 
-	var fh *pb.FileHandle
 	glog.Infof(`GetAttr called on "%s"`, name)
-	if name == "" {
-		fh = &c.rootfh
+	fh, fhErr := c.getFileHandle(name)
+	if fhErr != fuse.OK {
+		return nil, fhErr
 	}
 	resp, err := c.nfsClient.GetAttr(context.Background(), &pb.FileHandleRequest{
 		FileHandle: fh,
 	})
 	if err != nil {
 		glog.Errorf(`failed to get attributes of file "%s" :: %s`, name, err.Error())
-		return nil, fuse.EBUSY
+		return nil, fuse.EIO
 	}
 
 	fAttr := ProtoToFuseAttr(resp)
@@ -83,96 +134,127 @@ func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 }
 
 func (c *SamFs) Truncate(path string, size uint64,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Truncate called")
 	return fuse.EINVAL
 }
 
 func (c *SamFs) Utimens(name string, atime *time.Time, mtime *time.Time,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 	glog.Info("Utimens called")
 
 	return fuse.OK
 }
 
 func (c *SamFs) Chown(name string, uid uint32, gid uint32,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Chown called")
 	return fuse.OK
 }
 
 func (c *SamFs) Chmod(name string, mode uint32,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Chmod called")
 	return fuse.OK
 }
 
 func (c *SamFs) Access(name string, mode uint32,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Access called")
 	return fuse.OK
 }
 
 func (c *SamFs) Link(orig string, newName string,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Link called")
 	return fuse.OK
 }
 
-func (c *SamFs) Rmdir(path string, context *fuse.Context) fuse.Status {
-	glog.Info("Rmdir called")
+func (c *SamFs) Rmdir(path string, fContext *fuse.Context) fuse.Status {
+	glog.Infof("Rmdir called %s", path)
+
+	fh, fhErr := c.getParentHandle(path)
+	if fhErr != fuse.OK {
+		return fhErr
+	}
+
+	splitPath := strings.Split(path, "/")
+	name := splitPath[len(splitPath)-1]
+	_, err := c.nfsClient.Rmdir(context.Background(), &pb.LocalDirectoryRequest{
+		DirectoryFileHandle: fh,
+		Name:                name,
+	})
+	if err != nil {
+		glog.Errorf(`failed to remove directory "%s" :: %s`, path, err.Error())
+		return fuse.EIO
+	}
 	return fuse.OK
 }
 
 func (c *SamFs) Mkdir(path string, mode uint32,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Mkdir called")
+	glog.Infof("Mkdir called for %s", path)
+	fh, fhErr := c.getParentHandle(path)
+	if fhErr != fuse.OK {
+		return fhErr
+	}
+
+	splitPath := strings.Split(path, "/")
+	name := splitPath[len(splitPath)-1]
+	_, err := c.nfsClient.Mkdir(context.Background(), &pb.LocalDirectoryRequest{
+		DirectoryFileHandle: fh,
+		Name:                name,
+	})
+	if err != nil {
+		glog.Errorf(`failed to create directory "%s" :: %s`, path, err.Error())
+		return fuse.EIO
+	}
 	return fuse.OK
 }
 
 func (c *SamFs) Rename(oldName string, newName string,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Rename called")
 	return fuse.OK
 }
 
-func (c *SamFs) Unlink(name string, context *fuse.Context) fuse.Status {
+func (c *SamFs) Unlink(name string, fContext *fuse.Context) fuse.Status {
 	glog.Info("Unlink called")
 	return fuse.OK
 }
 
 func (c *SamFs) GetXAttr(name string, attribute string,
-	context *fuse.Context) ([]byte, fuse.Status) {
+	fContext *fuse.Context) ([]byte, fuse.Status) {
 
 	glog.Info("GetXAttr called")
 	return []byte{}, fuse.OK
 }
 
 func (c *SamFs) RemoveXAttr(name string, attr string,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("RemoveXAttr called")
 	return fuse.OK
 }
 
 func (c *SamFs) SetXAttr(name string, attr string, data []byte, flags int,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("SetXAttr called")
 	return fuse.OK
 }
 
-func (c *SamFs) ListXAttr(name string, context *fuse.Context) ([]string,
+func (c *SamFs) ListXAttr(name string, fContext *fuse.Context) ([]string,
 	fuse.Status) {
 
-	glog.Info("GetAttr called")
+	glog.Info("ListXAttr called")
 	return []string{}, fuse.OK
 }
 
@@ -193,34 +275,51 @@ func (c *SamFs) OnUnmount() {
 }
 
 func (c *SamFs) Open(name string, flags uint32,
-	context *fuse.Context) (nodefs.File, fuse.Status) {
+	fContext *fuse.Context) (nodefs.File, fuse.Status) {
 
 	glog.Info("Open called")
 	return nil, fuse.OK
 }
 
-func (c *SamFs) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry,
+func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,
 	fuse.Status) {
 
-	glog.Info("OpenDir called")
-	return nil, fuse.OK
+	glog.Infof(`OpenDir called on "%s"`, name)
+	fh, fhErr := c.getFileHandle(name)
+	if fhErr != fuse.OK {
+		return nil, fhErr
+	}
+	resp, err := c.nfsClient.Readdir(context.Background(), &pb.FileHandleRequest{
+		FileHandle: fh,
+	})
+	if err != nil {
+		glog.Errorf(`failed to read directory "%s" :: %s`, name, err.Error())
+		return nil, fuse.EBUSY
+	}
+
+	d := make([]fuse.DirEntry, len(resp.Entries))
+	for i, e := range resp.Entries {
+		d[i].Mode = e.Mode
+		d[i].Name = e.Name
+	}
+	return d, fuse.OK
 }
 
 func (c *SamFs) Create(name string, flags uint32, mode uint32,
-	context *fuse.Context) (nodefs.File, fuse.Status) {
+	fContext *fuse.Context) (nodefs.File, fuse.Status) {
 
 	glog.Info("Create called")
 	return nil, fuse.OK
 }
 
 func (c *SamFs) Symlink(pointedTo string, linkName string,
-	context *fuse.Context) fuse.Status {
+	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Symlink called")
 	return fuse.OK
 }
 
-func (c *SamFs) Readlink(name string, context *fuse.Context) (string,
+func (c *SamFs) Readlink(name string, fContext *fuse.Context) (string,
 	fuse.Status) {
 
 	glog.Info("Readlink called")

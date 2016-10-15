@@ -18,7 +18,7 @@ import (
 
 const (
 	dbFileName        string      = "samfs.db"
-	defaultPermission os.FileMode = 0666
+	defaultPermission os.FileMode = 0766
 )
 
 type SamFSServer struct {
@@ -95,7 +95,7 @@ func (s *SamFSServer) Mount(ctx context.Context,
 
 func (s *SamFSServer) Lookup(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
-	glog.Info("received lookup request")
+	glog.Infof(`received lookup request for "%s"`, req.Name)
 
 	//validate incoming directory file handle
 	err := s.verifyFileHandle(req.DirectoryFileHandle)
@@ -130,7 +130,7 @@ func (s *SamFSServer) Lookup(ctx context.Context,
 
 func (s *SamFSServer) GetAttr(ctx context.Context,
 	req *pb.FileHandleRequest) (*pb.GetAttrReply, error) {
-	glog.Info("received GetAttr request")
+	glog.Infof(`received GetAttr request for "%s"`, req.FileHandle.Path)
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -167,7 +167,7 @@ func (s *SamFSServer) GetAttr(ctx context.Context,
 
 func (s *SamFSServer) Readdir(ctx context.Context,
 	req *pb.FileHandleRequest) (*pb.ReaddirReply, error) {
-	glog.Info("received GetAttr request")
+	glog.Info("received Readdir request")
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
