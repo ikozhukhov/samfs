@@ -293,8 +293,15 @@ func (c *SamFs) OnUnmount() {
 func (c *SamFs) Open(name string, flags uint32,
 	fContext *fuse.Context) (nodefs.File, fuse.Status) {
 
-	glog.Info("Open called")
-	return nil, fuse.OK
+	glog.Infof("Open called on %s", name)
+	fh, fhErr := c.getFileHandle(name)
+	if fhErr != fuse.OK {
+		glog.Errorf(`failed to open file "%s"`, name)
+		return nil, fhErr
+	}
+	fdata := NewFileData(name, c, fh)
+	fsFh := NewFileHandle(fdata)
+	return fsFh, fuse.OK
 }
 
 func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,
@@ -327,6 +334,7 @@ func (c *SamFs) Create(name string, flags uint32, mode uint32,
 	glog.Infof("Create called %s", name)
 	fh, fhErr := c.getParentHandle(name)
 	if fhErr != fuse.OK {
+		glog.Errorf(`failed to create file "%s"`, name)
 		return nil, fhErr
 	}
 
@@ -341,7 +349,8 @@ func (c *SamFs) Create(name string, flags uint32, mode uint32,
 		return nil, fuse.EIO
 	}
 	fdata := NewFileData(name, c, resp.FileHandle)
-	return NewFileHandle(fdata), fuse.OK
+	fsFh := NewFileHandle(fdata)
+	return fsFh, fuse.OK
 }
 
 func (c *SamFs) Symlink(pointedTo string, linkName string,

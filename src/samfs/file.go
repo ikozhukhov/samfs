@@ -43,10 +43,11 @@ func NewFileHandle(f *SamFsFileData) *SamFsFileHandle {
 func NewFileData(path string, fs *SamFs, serverFh *pb.FileHandle) *SamFsFileData {
 
 	return &SamFsFileData{
-		Refs:  0,
-		Fs:    fs,
-		Name:  path,
-		Dirty: false,
+		Refs:     0,
+		Fs:       fs,
+		Name:     path,
+		Dirty:    false,
+		serverFh: serverFh,
 	}
 }
 
@@ -68,19 +69,45 @@ func (c *SamFsFileHandle) Chown(uid uint32, gid uint32) fuse.Status {
 func (c *SamFsFileHandle) Read(buf []byte, off int64) (fuse.ReadResult,
 	fuse.Status) {
 
-	glog.Info("Read called")
-	return nil, fuse.OK
+	glog.Info("Read called on %s off: %d, size %d", c.fileData.Name, off, len(buf))
+	name := c.fileData.Name
+	fh := c.fileData.serverFh
+	resp, err := c.fileData.Fs.nfsClient.Read(context.Background(),
+		&pb.ReadRequest{
+			FileHandle: fh,
+			Offset:     off,
+			Size:       int64(len(buf)),
+		})
+	if err != nil {
+		glog.Errorf(`failed to write to file "%s" :: %s`, name, err.Error())
+		var nullData []byte
+		return fuse.ReadResultData(nullData), fuse.EIO
+	}
+	return fuse.ReadResultData(resp.Data), fuse.OK
 }
 
 func (c *SamFsFileHandle) Write(data []byte, offset int64) (uint32,
 	fuse.Status) {
 
-	glog.Info("Write called")
+	glog.Info("Write called on %s", c.fileData.Name)
+	name := c.fileData.Name
+	fh := c.fileData.serverFh
+	_, err := c.fileData.Fs.nfsClient.Write(context.Background(),
+		&pb.WriteRequest{
+			FileHandle: fh,
+			Offset:     offset,
+			Size:       int64(len(data)),
+			Data:       data,
+		})
+	if err != nil {
+		glog.Errorf(`failed to write to file "%s" :: %s`, name, err.Error())
+		return 0, fuse.EIO
+	}
 	return uint32(len(data)), fuse.OK
 }
 
 func (c *SamFsFileHandle) Flush() fuse.Status {
-	glog.Info("Flush called")
+	glog.Infof("Flush called on %s", c.fileData.Name)
 	return fuse.OK
 }
 
@@ -92,7 +119,7 @@ func (c *SamFsFileHandle) Allocate(off uint64, size uint64,
 }
 
 func (c *SamFsFileHandle) Release() {
-	glog.Info("Release called")
+	glog.Infof("Release called on %s", c.fileData.Name)
 	c.fileData.Lock()
 	c.fileData.Refs--
 	c.fileData.Unlock()
@@ -109,10 +136,7 @@ func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
 	glog.Infof("GetAttr(file) called %s", c.fileData.Name)
 
 	name := c.fileData.Name
-	fh, fhErr := c.fileData.Fs.getFileHandle(name)
-	if fhErr != fuse.OK {
-		return fhErr
-	}
+	fh := c.fileData.serverFh
 	resp, err := c.fileData.Fs.nfsClient.GetAttr(context.Background(),
 		&pb.FileHandleRequest{
 			FileHandle: fh,
