@@ -136,13 +136,13 @@ func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 func (c *SamFs) Truncate(path string, size uint64,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Truncate called")
+	glog.Infof("Truncate called on  %s", path)
 	return fuse.EINVAL
 }
 
 func (c *SamFs) Utimens(name string, atime *time.Time, mtime *time.Time,
 	fContext *fuse.Context) fuse.Status {
-	glog.Info("Utimens called")
+	glog.Infof("Utimens called on %s", name)
 
 	return fuse.OK
 }
@@ -172,7 +172,7 @@ func (c *SamFs) Link(orig string, newName string,
 	fContext *fuse.Context) fuse.Status {
 
 	glog.Info("Link called")
-	return fuse.OK
+	return fuse.EINVAL
 }
 
 func (c *SamFs) Rmdir(path string, fContext *fuse.Context) fuse.Status {
@@ -226,7 +226,23 @@ func (c *SamFs) Rename(oldName string, newName string,
 }
 
 func (c *SamFs) Unlink(name string, fContext *fuse.Context) fuse.Status {
-	glog.Info("Unlink called")
+	glog.Infof("Unlink called on %s", name)
+
+	fh, fhErr := c.getParentHandle(name)
+	if fhErr != fuse.OK {
+		return fhErr
+	}
+
+	splitPath := strings.Split(name, "/")
+	justName := splitPath[len(splitPath)-1]
+	_, err := c.nfsClient.Remove(context.Background(), &pb.LocalDirectoryRequest{
+		DirectoryFileHandle: fh,
+		Name:                justName,
+	})
+	if err != nil {
+		glog.Errorf(`failed to remove file "%s" :: %s`, name, err.Error())
+		return fuse.EIO
+	}
 	return fuse.OK
 }
 
@@ -308,8 +324,24 @@ func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,
 func (c *SamFs) Create(name string, flags uint32, mode uint32,
 	fContext *fuse.Context) (nodefs.File, fuse.Status) {
 
-	glog.Info("Create called")
-	return nil, fuse.OK
+	glog.Infof("Create called %s", name)
+	fh, fhErr := c.getParentHandle(name)
+	if fhErr != fuse.OK {
+		return nil, fhErr
+	}
+
+	splitPath := strings.Split(name, "/")
+	justName := splitPath[len(splitPath)-1]
+	resp, err := c.nfsClient.Create(context.Background(), &pb.LocalDirectoryRequest{
+		DirectoryFileHandle: fh,
+		Name:                justName,
+	})
+	if err != nil {
+		glog.Errorf(`failed to create file "%s" :: %s`, name, err.Error())
+		return nil, fuse.EIO
+	}
+	fdata := NewFileData(name, c, resp.FileHandle)
+	return NewFileHandle(fdata), fuse.OK
 }
 
 func (c *SamFs) Symlink(pointedTo string, linkName string,

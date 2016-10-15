@@ -8,6 +8,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
+	pb "github.com/smihir/samfs/src/proto"
+	"golang.org/x/net/context"
 )
 
 type SamFsFileHandle struct {
@@ -18,13 +20,13 @@ type SamFsFileHandle struct {
 
 type SamFsFileData struct {
 	sync.Mutex
-	Fs    *SamFs
-	Refs  int32
-	Name  string
-	Data  []byte
-	Hash  []byte
-	Dirty bool
-	Attr  *fuse.Attr
+	serverFh *pb.FileHandle
+	Fs       *SamFs
+	Refs     int32
+	Name     string
+	Data     []byte
+	Dirty    bool
+	Attr     *fuse.Attr
 }
 
 func NewFileHandle(f *SamFsFileData) *SamFsFileHandle {
@@ -38,24 +40,13 @@ func NewFileHandle(f *SamFsFileData) *SamFsFileHandle {
 	}
 }
 
-func NewEmptyFileData(path string) *SamFsFileData {
-	return &SamFsFileData{
-		Refs:  0,
-		Dirty: true,
-	}
-}
-
-func NewFileData(path string, fs *SamFs, hash []byte, data []byte,
-	attr *fuse.Attr) *SamFsFileData {
+func NewFileData(path string, fs *SamFs, serverFh *pb.FileHandle) *SamFsFileData {
 
 	return &SamFsFileData{
 		Refs:  0,
 		Fs:    fs,
 		Name:  path,
-		Data:  data,
-		Hash:  hash,
 		Dirty: false,
-		Attr:  attr,
 	}
 }
 
@@ -110,12 +101,35 @@ func (c *SamFsFileHandle) Release() {
 }
 
 func (c *SamFsFileHandle) Fsync(flags int) fuse.Status {
-	glog.Info("Fsync called")
+	glog.Infof("Fsync called %s", c.fileData.Name)
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
-	glog.Info("GetAttr(file) called")
+	glog.Infof("GetAttr(file) called %s", c.fileData.Name)
+
+	name := c.fileData.Name
+	fh, fhErr := c.fileData.Fs.getFileHandle(name)
+	if fhErr != fuse.OK {
+		return fhErr
+	}
+	resp, err := c.fileData.Fs.nfsClient.GetAttr(context.Background(),
+		&pb.FileHandleRequest{
+			FileHandle: fh,
+		})
+	if err != nil {
+		glog.Errorf(`failed to get attributes of file "%s" :: %s`, name, err.Error())
+		return fuse.EIO
+	}
+
+	fAttr := ProtoToFuseAttr(resp)
+	// TODO(mihir): keep the owner as the user who started the client process, not
+	// the owner of the process who is calling the command which in turn calls this
+	// function
+	// fAttr.Owner = fContext.Owner
+
+	out = fAttr
+
 	return fuse.OK
 }
 
@@ -125,7 +139,7 @@ func (c *SamFsFileHandle) InnerFile() nodefs.File {
 }
 
 func (c *SamFsFileHandle) SetInode(i *nodefs.Inode) {
-	glog.Info("SetInode called")
+	glog.Infof("SetInode called %s", c.fileData.Name)
 }
 
 func (c *SamFsFileHandle) Truncate(size uint64) fuse.Status {
@@ -136,6 +150,6 @@ func (c *SamFsFileHandle) Truncate(size uint64) fuse.Status {
 func (c *SamFsFileHandle) Utimens(atime *time.Time,
 	mtime *time.Time) fuse.Status {
 
-	glog.Info("Utimens called")
+	glog.Infof("Utimens(file) called %s", c.fileData.Name)
 	return fuse.OK
 }
