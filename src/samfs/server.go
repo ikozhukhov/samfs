@@ -165,6 +165,46 @@ func (s *SamFSServer) GetAttr(ctx context.Context,
 	return attr, nil
 }
 
+func (s *SamFSServer) Readdir(ctx context.Context,
+	req *pb.FileHandleRequest) (*pb.ReaddirReply, error) {
+	glog.Info("received GetAttr request")
+
+	//validate incoming file handle
+	err := s.verifyFileHandle(req.FileHandle)
+	if err != nil {
+		glog.Errorf(err.Error())
+		return nil, err
+	}
+
+	filePath := path.Join(s.rootDirectory, req.FileHandle.Path)
+	fd, err := os.Open(filePath)
+	if err != nil {
+		glog.Errorf("could not get open file %s :: %v", filePath, err)
+		return nil, err
+	}
+	defer fd.Close()
+
+	entries, err := fd.Readdir(0)
+	if err != nil {
+		glog.Errorf("could not readdir file %s :: %v", filePath, err)
+		return nil, err
+	}
+
+	respEntries := make([]*pb.DirEntry, len(entries), cap(entries))
+	for i, entry := range entries {
+		respEntries[i] = &pb.DirEntry{
+			Name: entry.Name(),
+			Mode: uint32(entry.Mode()),
+		}
+	}
+
+	resp := &pb.ReaddirReply{
+		Entries: respEntries,
+	}
+
+	return resp, nil
+}
+
 func (s *SamFSServer) Read(ctx context.Context,
 	req *pb.ReadRequest) (*pb.ReadReply, error) {
 	glog.Info("received read request")

@@ -11,6 +11,7 @@ service NFS {
     rpc Mount   (MountRequest)  returns (FileHandleReply) {}
     rpc Lookup  (LocalDirectoryRequest) returns (FileHandleReply) {}
     rpc GetAttr (FileHandleRequest) returns (GetAttrReply) {}
+    rpc Readdir (FileHandleRequest) returns (ReaddirReply) {}
 
     rpc Read   (ReadRequest)   returns (ReadReply) {}
     rpc Write  (WriteRequest)  returns (StatusReply) {}
@@ -23,10 +24,17 @@ service NFS {
     rpc Rmdir  (LocalDirectoryRequest)  returns (StatusReply) {}
 }
 
+// basic types
+
 message FileHandle {
 	string path = 1;
 	uint64 inodeNumber = 2;
 	uint32 generationNumber = 3;
+}
+
+message DirEntry {
+  string name = 1;
+  uint32 mode = 2;
 }
 
 // requests
@@ -70,6 +78,7 @@ message LocalDirectoryRequest {
 }
 
 // replies
+
 message GetAttrReply {
   uint64 Ino = 1;
   uint64 Size = 2;
@@ -84,6 +93,10 @@ message GetAttrReply {
   uint32 Nlink = 11;
   uint32 Rdev = 12;
   uint32 Blksize = 13;
+}
+
+message ReaddirReply {
+ repeated DirEntry entries = 1;
 }
 
 // common replies
