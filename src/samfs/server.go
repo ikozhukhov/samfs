@@ -167,7 +167,8 @@ func (s *SamFSServer) GetAttr(ctx context.Context,
 
 func (s *SamFSServer) Readdir(ctx context.Context,
 	req *pb.FileHandleRequest) (*pb.ReaddirReply, error) {
-	glog.Info("received Readdir request")
+	glog.Infof("received Readdir request root: %s, path: %s", s.rootDirectory,
+		req.FileHandle.Path)
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -314,7 +315,8 @@ func (s *SamFSServer) Commit(ctx context.Context,
 
 func (s *SamFSServer) Create(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
-	glog.Info("recevied create request")
+	glog.Infof("recevied create request root: %s, path: %s", s.rootDirectory,
+		req.DirectoryFileHandle.Path)
 
 	//validate incoming directory file handle
 	err := s.verifyFileHandle(req.DirectoryFileHandle)
@@ -325,7 +327,7 @@ func (s *SamFSServer) Create(ctx context.Context,
 
 	directoryPath := path.Join(s.rootDirectory, req.DirectoryFileHandle.Path)
 	filePath := path.Join(directoryPath, req.Name)
-	file, err := os.Create(filePath)
+	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0766)
 	if err != nil {
 		glog.Errorf("Failed to create file at path %s :: %v\n", filePath, err)
 		return nil, err

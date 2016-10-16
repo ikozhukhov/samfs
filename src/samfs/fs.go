@@ -1,6 +1,8 @@
 package samfs
 
 import (
+	"os/user"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,6 +32,8 @@ type SamFs struct {
 	clientConn *grpc.ClientConn
 
 	rootfh pb.FileHandle
+
+	owner fuse.Owner
 }
 
 func NewSamFs(opts *SamFsOptions) (*SamFs, error) {
@@ -44,6 +48,22 @@ func NewSamFs(opts *SamFsOptions) (*SamFs, error) {
 	}
 	samFs.nfsClient = pb.NewNFSClient(conn)
 	samFs.clientConn = conn
+	u, uErr := user.Current()
+	if uErr != nil {
+		return nil, err
+	}
+	uid, uIdErr := strconv.ParseUint(u.Uid, 10, 32)
+	if uIdErr != nil {
+		return nil, uIdErr
+	}
+	gid, gIdErr := strconv.ParseUint(u.Gid, 10, 32)
+	if gIdErr != nil {
+		return nil, gIdErr
+	}
+
+	samFs.owner.Uid = uint32(uid)
+	samFs.owner.Gid = uint32(gid)
+	glog.Infof("running samfs with uid: %d, gid: %d", uid, gid)
 
 	return samFs, nil
 }
@@ -125,10 +145,7 @@ func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 	}
 
 	fAttr := ProtoToFuseAttr(resp)
-	// TODO(mihir): keep the owner as the user who started the client process, not
-	// the owner of the process who is calling the command which in turn calls this
-	// function
-	fAttr.Owner = fContext.Owner
+	fAttr.Owner = c.owner
 
 	return fAttr, fuse.OK
 }
@@ -301,7 +318,12 @@ func (c *SamFs) Open(name string, flags uint32,
 	}
 	fdata := NewFileData(name, c, fh)
 	fsFh := NewFileHandle(fdata)
-	return fsFh, fuse.OK
+	return &nodefs.WithFlags{
+		File: fsFh,
+		// NOTE(mihir): if there is some problem wrt fuse, uncomment the
+		// line below!
+		//FuseFlags: fuse.FOPEN_DIRECT_IO,
+	}, fuse.OK
 }
 
 func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,

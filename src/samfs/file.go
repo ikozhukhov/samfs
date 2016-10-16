@@ -1,7 +1,6 @@
 package samfs
 
 import (
-	//"bytes"
 	"sync"
 	"time"
 
@@ -28,6 +27,8 @@ type SamFsFileData struct {
 	Dirty    bool
 	Attr     *fuse.Attr
 }
+
+var _ nodefs.File = &SamFsFileHandle{}
 
 func NewFileHandle(f *SamFsFileData) *SamFsFileHandle {
 	f.Lock()
@@ -69,7 +70,7 @@ func (c *SamFsFileHandle) Chown(uid uint32, gid uint32) fuse.Status {
 func (c *SamFsFileHandle) Read(buf []byte, off int64) (fuse.ReadResult,
 	fuse.Status) {
 
-	glog.Info("Read called on %s off: %d, size %d", c.fileData.Name, off, len(buf))
+	glog.Infof("Read called on %s off: %d, size %d", c.fileData.Name, off, len(buf))
 	name := c.fileData.Name
 	fh := c.fileData.serverFh
 	resp, err := c.fileData.Fs.nfsClient.Read(context.Background(),
@@ -89,7 +90,7 @@ func (c *SamFsFileHandle) Read(buf []byte, off int64) (fuse.ReadResult,
 func (c *SamFsFileHandle) Write(data []byte, offset int64) (uint32,
 	fuse.Status) {
 
-	glog.Info("Write called on %s", c.fileData.Name)
+	glog.Infof("Write called on %s", c.fileData.Name)
 	name := c.fileData.Name
 	fh := c.fileData.serverFh
 	_, err := c.fileData.Fs.nfsClient.Write(context.Background(),
@@ -147,12 +148,26 @@ func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
 	}
 
 	fAttr := ProtoToFuseAttr(resp)
-	// TODO(mihir): keep the owner as the user who started the client process, not
-	// the owner of the process who is calling the command which in turn calls this
-	// function
-	// fAttr.Owner = fContext.Owner
 
-	out = fAttr
+	fAttr.Owner = c.fileData.Fs.owner
+
+	// Have to copy these one by one as expected by the library
+	out.Ino = fAttr.Ino
+	out.Size = fAttr.Size
+	out.Blocks = fAttr.Blocks
+	out.Atime = fAttr.Atime
+	out.Mtime = fAttr.Mtime
+	out.Ctime = fAttr.Ctime
+	out.Atimensec = fAttr.Atimensec
+	out.Mtimensec = fAttr.Mtimensec
+	out.Ctimensec = fAttr.Ctimensec
+	out.Mode = fAttr.Mode
+	out.Nlink = fAttr.Nlink
+	out.Owner.Uid = fAttr.Owner.Uid
+	out.Owner.Gid = fAttr.Owner.Gid
+	out.Rdev = fAttr.Rdev
+	out.Blksize = fAttr.Blksize
+	out.Padding = fAttr.Padding
 
 	return fuse.OK
 }
