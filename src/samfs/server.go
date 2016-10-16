@@ -3,6 +3,7 @@ package samfs
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
 	"os"
@@ -233,7 +234,7 @@ func (s *SamFSServer) Read(ctx context.Context,
 	}
 
 	n, err := fd.ReadAt(data, req.Offset)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		glog.Errorf("failed to read file %s :: %v\n", req.FileHandle.Path, err)
 		return nil, err
 	}
