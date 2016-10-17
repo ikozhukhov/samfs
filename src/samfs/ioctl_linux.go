@@ -13,8 +13,10 @@ package samfs
 //    int fileno = open(f, O_RDONLY);
 //    uint32_t generation = -1;
 //    if (ioctl(fileno, FS_IOC_GETVERSION, &generation)) {
+//        close(fileno);
 //        return generation;
 //    }
+//    close(fileno);
 //    return generation;
 //}
 import "C"
