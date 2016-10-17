@@ -166,8 +166,8 @@ func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
 	out.Owner.Uid = fAttr.Owner.Uid
 	out.Owner.Gid = fAttr.Owner.Gid
 	out.Rdev = fAttr.Rdev
-	out.Blksize = fAttr.Blksize
-	out.Padding = fAttr.Padding
+	//out.Blksize = fAttr.Blksize
+	//out.Padding = fAttr.Padding
 
 	return fuse.OK
 }
