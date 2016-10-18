@@ -20,12 +20,12 @@ func usage() {
 
 func init() {
 	flag.Usage = usage
-	rootDirectory = flag.String("root", "default root", "this is root of the FS")
+	rootDirectory = flag.String("root", "", "this is root of the FS")
 	flag.Parse()
 }
 
 func main() {
-	if rootDirectory == nil {
+	if *rootDirectory == "" {
 		usage()
 	}
 	s, _ := samfs.NewServer(*rootDirectory)
