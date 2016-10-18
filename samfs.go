@@ -36,7 +36,7 @@ func main() {
 		dir := "/trash"
 		_, _ = samfs.NewClient(&server, &port, &dir)
 	} else {
-		_, _ = samfs.NewServer(".")
+		_, _ = samfs.NewServer(".", "24100")
 	}
 
 	e := errors.New("samfs server stub")

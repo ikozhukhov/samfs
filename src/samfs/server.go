@@ -36,7 +36,7 @@ type SamFSServer struct {
 
 var _ pb.NFSServer = &SamFSServer{}
 
-func NewServer(rootDirectory string) (*SamFSServer, error) {
+func NewServer(rootDirectory string, port string) (*SamFSServer, error) {
 	inum, gnum, err := GetInodeAndGenerationNumbers(rootDirectory)
 	if err != nil {
 		glog.Errorf("failed to get inode and generation number for root "+
@@ -54,7 +54,7 @@ func NewServer(rootDirectory string) (*SamFSServer, error) {
 		rootDirectory:  rootDirectory,
 		rootFileHandle: rootFileHandle,
 		// TODO(mihir): make port number configurable
-		port: ":24100",
+		port: ":" + port,
 	}
 
 	return s, nil
