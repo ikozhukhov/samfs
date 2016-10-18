@@ -22,6 +22,7 @@ service NFS {
 
     rpc Mkdir  (LocalDirectoryRequest)  returns (FileHandleReply) {}
     rpc Rmdir  (LocalDirectoryRequest)  returns (StatusReply) {}
+    rpc Rename (RenameRequest) returns (StatusReply) {}
 }
 
 // basic types
@@ -108,4 +109,11 @@ message FileHandleReply {
 message StatusReply {
   bool success = 1;
   int64 serverSessionID = 2;
+}
+
+message RenameRequest{
+  FileHandle fromDirHandle = 1;
+  string fromName = 2;
+  FileHandle toDirHandle = 3;
+  string toName = 4;
 }

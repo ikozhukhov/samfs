@@ -424,8 +424,46 @@ func (s *SamFSServer) Mkdir(ctx context.Context,
 
 func (s *SamFSServer) Rmdir(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
-	glog.Info("recevied rmdir request")
+	glog.Info("recevied Rmdir request")
 	return s.remove(ctx, req)
+}
+
+func (s *SamFSServer) Rename(ctx context.Context,
+	req *pb.RenameRequest) (*pb.StatusReply, error) {
+	glog.Info("received Rename request from %s to %s", req.FromName, req.ToName)
+	//validating incoming directory file handle
+	fromErr := s.verifyFileHandle(req.FromDirHandle)
+	if fromErr != nil {
+		glog.Errorf(fromErr.Error())
+		return nil, fromErr
+	}
+
+	toErr := s.verifyFileHandle(req.ToDirHandle)
+	if toErr != nil {
+		glog.Errorf(toErr.Error())
+		return nil, toErr
+	}
+
+	fromDirPath := path.Join(s.rootDirectory, req.FromDirHandle.Path)
+	fromFilePath := path.Join(fromDirPath, req.FromName)
+	toDirPath := path.Join(s.rootDirectory, req.ToDirHandle.Path)
+	toFilePath := path.Join(toDirPath, req.ToName)
+
+	renErr := os.Rename(fromFilePath, toFilePath)
+	if renErr != nil {
+		glog.Errorf(renErr.Error())
+		return nil, renErr
+	}
+
+	err := flush(toFilePath)
+	if err != nil {
+		glog.Warningf("failed to flush file on rename :: %v", err)
+	}
+	resp := &pb.StatusReply{
+		Success: true,
+	}
+
+	return resp, nil
 }
 
 //common methods

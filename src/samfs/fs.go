@@ -238,7 +238,34 @@ func (c *SamFs) Mkdir(path string, mode uint32,
 func (c *SamFs) Rename(oldName string, newName string,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Rename called")
+	glog.Info("Rename called from %s to %s", oldName, newName)
+	fromFh, fromFhErr := c.getParentHandle(oldName)
+	if fromFhErr != fuse.OK {
+		return fromFhErr
+	}
+
+	toFh, toFhErr := c.getParentHandle(newName)
+	if toFhErr != fuse.OK {
+		return toFhErr
+	}
+
+	oSplitPath := strings.Split(oldName, "/")
+	oName := oSplitPath[len(oSplitPath)-1]
+
+	nSplitPath := strings.Split(newName, "/")
+	nName := nSplitPath[len(nSplitPath)-1]
+
+	_, err := c.nfsClient.Rename(context.Background(), &pb.RenameRequest{
+		FromDirHandle: fromFh,
+		FromName:      oName,
+		ToDirHandle:   toFh,
+		ToName:        nName,
+	})
+
+	if err != nil {
+		glog.Errorf("failed to rename from %s to %s :: %s", oName, nName, err.Error())
+		return fuse.EIO
+	}
 	return fuse.OK
 }
 
