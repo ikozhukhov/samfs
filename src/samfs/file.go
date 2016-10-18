@@ -183,7 +183,7 @@ func (c *SamFsFileHandle) SetInode(i *nodefs.Inode) {
 
 func (c *SamFsFileHandle) Truncate(size uint64) fuse.Status {
 	glog.Info("Truncate called")
-	return fuse.ENOENT
+	return fuse.OK
 }
 
 func (c *SamFsFileHandle) Utimens(atime *time.Time,
