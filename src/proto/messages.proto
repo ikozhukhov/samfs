@@ -64,7 +64,7 @@ message WriteRequest {
   int64 offset = 2;
   int64 size = 3;
   bytes data = 4;
-  //TODO (arman): do we need to send a clientID of some sort?
+  bool shouldCommit = 5;
 }
 
 message CommitRequest {

@@ -272,6 +272,16 @@ func (s *SamFSServer) Write(ctx context.Context,
 		return nil, err
 	}
 
+	if req.ShouldCommit {
+		glog.Infof("syncing file %s write in write()", req.FileHandle.Path)
+		err = fd.Sync()
+		if err != nil {
+			glog.Errorf("could not perform fsync on file %s :: %v\n",
+				req.FileHandle.Path, err)
+			return nil, err
+		}
+	}
+
 	resp := &pb.StatusReply{
 		Success:         true,
 		ServerSessionID: s.sessionID,
