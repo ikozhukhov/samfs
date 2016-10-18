@@ -85,7 +85,7 @@ func (c *SamFs) getFileHandle(name string) (*pb.FileHandle, fuse.Status) {
 			Name:                fname,
 		})
 		if err != nil {
-			glog.Errorf(`failed to lookup file "%s" :: %s`, fname, err.Error())
+			glog.V(3).Infof(`failed to lookup file "%s" :: %s`, fname, err.Error())
 			// error code 5 implies the file does not exist
 			if grpc.Code(err) == 5 {
 				return nil, fuse.ENOENT
@@ -117,7 +117,7 @@ func (c *SamFs) getParentHandle(name string) (*pb.FileHandle, fuse.Status) {
 	// path to the parent
 	myName := path[len(path)-1]
 	parentPath := strings.TrimSuffix(name, "/"+myName)
-	glog.Infof("getParentHandle: name %s, parentPath %s", name, parentPath)
+	glog.V(3).Infof("getParentHandle: name %s, parentPath %s", name, parentPath)
 
 	return c.getFileHandle(parentPath)
 }
@@ -131,7 +131,7 @@ func (c *SamFs) getParentHandle(name string) (*pb.FileHandle, fuse.Status) {
 func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 	fuse.Status) {
 
-	glog.Infof(`GetAttr called on "%s"`, name)
+	glog.V(3).Infof(`GetAttr called on "%s"`, name)
 	fh, fhErr := c.getFileHandle(name)
 	if fhErr != fuse.OK {
 		return nil, fhErr
@@ -153,13 +153,13 @@ func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 func (c *SamFs) Truncate(path string, size uint64,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Infof("Truncate called on  %s", path)
+	glog.V(3).Infof("Truncate called on  %s", path)
 	return fuse.EINVAL
 }
 
 func (c *SamFs) Utimens(name string, atime *time.Time, mtime *time.Time,
 	fContext *fuse.Context) fuse.Status {
-	glog.Infof("Utimens called on %s", name)
+	glog.V(3).Infof("Utimens called on %s", name)
 
 	return fuse.OK
 }
@@ -167,33 +167,33 @@ func (c *SamFs) Utimens(name string, atime *time.Time, mtime *time.Time,
 func (c *SamFs) Chown(name string, uid uint32, gid uint32,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Chown called")
+	glog.V(3).Info("Chown called")
 	return fuse.OK
 }
 
 func (c *SamFs) Chmod(name string, mode uint32,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Chmod called")
+	glog.V(3).Info("Chmod called")
 	return fuse.OK
 }
 
 func (c *SamFs) Access(name string, mode uint32,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Access called")
+	glog.V(3).Info("Access called")
 	return fuse.OK
 }
 
 func (c *SamFs) Link(orig string, newName string,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Link called")
+	glog.V(3).Info("Link called")
 	return fuse.EINVAL
 }
 
 func (c *SamFs) Rmdir(path string, fContext *fuse.Context) fuse.Status {
-	glog.Infof("Rmdir called %s", path)
+	glog.V(3).Infof("Rmdir called %s", path)
 
 	fh, fhErr := c.getParentHandle(path)
 	if fhErr != fuse.OK {
@@ -216,7 +216,7 @@ func (c *SamFs) Rmdir(path string, fContext *fuse.Context) fuse.Status {
 func (c *SamFs) Mkdir(path string, mode uint32,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Infof("Mkdir called for %s", path)
+	glog.V(3).Infof("Mkdir called for %s", path)
 	fh, fhErr := c.getParentHandle(path)
 	if fhErr != fuse.OK {
 		return fhErr
@@ -238,7 +238,7 @@ func (c *SamFs) Mkdir(path string, mode uint32,
 func (c *SamFs) Rename(oldName string, newName string,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Rename called from %s to %s", oldName, newName)
+	glog.V(3).Info("Rename called from %s to %s", oldName, newName)
 	fromFh, fromFhErr := c.getParentHandle(oldName)
 	if fromFhErr != fuse.OK {
 		return fromFhErr
@@ -270,7 +270,7 @@ func (c *SamFs) Rename(oldName string, newName string,
 }
 
 func (c *SamFs) Unlink(name string, fContext *fuse.Context) fuse.Status {
-	glog.Infof("Unlink called on %s", name)
+	glog.V(3).Infof("Unlink called on %s", name)
 
 	fh, fhErr := c.getParentHandle(name)
 	if fhErr != fuse.OK {
@@ -293,33 +293,33 @@ func (c *SamFs) Unlink(name string, fContext *fuse.Context) fuse.Status {
 func (c *SamFs) GetXAttr(name string, attribute string,
 	fContext *fuse.Context) ([]byte, fuse.Status) {
 
-	glog.Info("GetXAttr called")
+	glog.V(3).Info("GetXAttr called")
 	return []byte{}, fuse.OK
 }
 
 func (c *SamFs) RemoveXAttr(name string, attr string,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("RemoveXAttr called")
+	glog.V(3).Info("RemoveXAttr called")
 	return fuse.OK
 }
 
 func (c *SamFs) SetXAttr(name string, attr string, data []byte, flags int,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("SetXAttr called")
+	glog.V(3).Info("SetXAttr called")
 	return fuse.OK
 }
 
 func (c *SamFs) ListXAttr(name string, fContext *fuse.Context) ([]string,
 	fuse.Status) {
 
-	glog.Info("ListXAttr called")
+	glog.V(3).Info("ListXAttr called")
 	return []string{}, fuse.OK
 }
 
 func (c *SamFs) OnMount(nodefs *pathfs.PathNodeFs) {
-	glog.Info("OnMount called")
+	glog.V(3).Info("OnMount called")
 	resp, err := c.nfsClient.Mount(context.Background(), &pb.MountRequest{})
 	if err != nil {
 		glog.Fatalf("failed to mount the remote filesystem :: %s", err.Error())
@@ -331,13 +331,13 @@ func (c *SamFs) OnMount(nodefs *pathfs.PathNodeFs) {
 
 func (c *SamFs) OnUnmount() {
 	c.clientConn.Close()
-	glog.Info("unmount okay")
+	glog.V(3).Info("unmount okay")
 }
 
 func (c *SamFs) Open(name string, flags uint32,
 	fContext *fuse.Context) (nodefs.File, fuse.Status) {
 
-	glog.Infof("Open called on %s", name)
+	glog.V(3).Infof("Open called on %s", name)
 	fh, fhErr := c.getFileHandle(name)
 	if fhErr != fuse.OK {
 		glog.Errorf(`failed to open file "%s"`, name)
@@ -356,7 +356,7 @@ func (c *SamFs) Open(name string, flags uint32,
 func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,
 	fuse.Status) {
 
-	glog.Infof(`OpenDir called on "%s"`, name)
+	glog.V(3).Infof(`OpenDir called on "%s"`, name)
 	fh, fhErr := c.getFileHandle(name)
 	if fhErr != fuse.OK {
 		return nil, fhErr
@@ -380,7 +380,7 @@ func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,
 func (c *SamFs) Create(name string, flags uint32, mode uint32,
 	fContext *fuse.Context) (nodefs.File, fuse.Status) {
 
-	glog.Infof("Create called %s", name)
+	glog.V(3).Infof("Create called %s", name)
 	fh, fhErr := c.getParentHandle(name)
 	if fhErr != fuse.OK {
 		glog.Errorf(`failed to create file "%s"`, name)
@@ -405,18 +405,18 @@ func (c *SamFs) Create(name string, flags uint32, mode uint32,
 func (c *SamFs) Symlink(pointedTo string, linkName string,
 	fContext *fuse.Context) fuse.Status {
 
-	glog.Info("Symlink called")
+	glog.V(3).Info("Symlink called")
 	return fuse.OK
 }
 
 func (c *SamFs) Readlink(name string, fContext *fuse.Context) (string,
 	fuse.Status) {
 
-	glog.Info("Readlink called")
+	glog.V(3).Info("Readlink called")
 	return "", fuse.OK
 }
 
 func (c *SamFs) StatFs(name string) *fuse.StatfsOut {
-	glog.Info("StatFs called")
+	glog.V(3).Info("StatFs called")
 	return &fuse.StatfsOut{}
 }

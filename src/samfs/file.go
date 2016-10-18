@@ -53,24 +53,24 @@ func NewFileData(path string, fs *SamFs, serverFh *pb.FileHandle) *SamFsFileData
 }
 
 func (c *SamFsFileHandle) String() string {
-	glog.Info("String called")
+	glog.V(3).Info("String called")
 	return c.fileData.Name
 }
 
 func (c *SamFsFileHandle) Chmod(mode uint32) fuse.Status {
-	glog.Info("Chmod called")
+	glog.V(3).Info("Chmod called")
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) Chown(uid uint32, gid uint32) fuse.Status {
-	glog.Info("Chown called")
+	glog.V(3).Info("Chown called")
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) Read(buf []byte, off int64) (fuse.ReadResult,
 	fuse.Status) {
 
-	glog.Infof("Read called on %s off: %d, size %d", c.fileData.Name, off, len(buf))
+	glog.V(3).Infof("Read called on %s off: %d, size %d", c.fileData.Name, off, len(buf))
 	name := c.fileData.Name
 	fh := c.fileData.serverFh
 	resp, err := c.fileData.Fs.nfsClient.Read(context.Background(),
@@ -90,7 +90,7 @@ func (c *SamFsFileHandle) Read(buf []byte, off int64) (fuse.ReadResult,
 func (c *SamFsFileHandle) Write(data []byte, offset int64) (uint32,
 	fuse.Status) {
 
-	glog.Infof("Write called on %s", c.fileData.Name)
+	glog.V(3).Infof("Write called on %s", c.fileData.Name)
 	name := c.fileData.Name
 	fh := c.fileData.serverFh
 	_, err := c.fileData.Fs.nfsClient.Write(context.Background(),
@@ -108,19 +108,19 @@ func (c *SamFsFileHandle) Write(data []byte, offset int64) (uint32,
 }
 
 func (c *SamFsFileHandle) Flush() fuse.Status {
-	glog.Infof("Flush called on %s", c.fileData.Name)
+	glog.V(3).Infof("Flush called on %s", c.fileData.Name)
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) Allocate(off uint64, size uint64,
 	mode uint32) fuse.Status {
 
-	glog.Info("Allocate called")
+	glog.V(3).Info("Allocate called")
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) Release() {
-	glog.Infof("Release called on %s", c.fileData.Name)
+	glog.V(3).Infof("Release called on %s", c.fileData.Name)
 	c.fileData.Lock()
 	c.fileData.Refs--
 	c.fileData.Unlock()
@@ -129,12 +129,12 @@ func (c *SamFsFileHandle) Release() {
 }
 
 func (c *SamFsFileHandle) Fsync(flags int) fuse.Status {
-	glog.Infof("Fsync called %s", c.fileData.Name)
+	glog.V(3).Infof("Fsync called %s", c.fileData.Name)
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
-	glog.Infof("GetAttr(file) called %s", c.fileData.Name)
+	glog.V(3).Infof("GetAttr(file) called %s", c.fileData.Name)
 
 	name := c.fileData.Name
 	fh := c.fileData.serverFh
@@ -173,22 +173,22 @@ func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
 }
 
 func (c *SamFsFileHandle) InnerFile() nodefs.File {
-	glog.Info("InnerFile called")
+	glog.V(3).Info("InnerFile called")
 	return c
 }
 
 func (c *SamFsFileHandle) SetInode(i *nodefs.Inode) {
-	glog.Infof("SetInode called %s", c.fileData.Name)
+	glog.V(3).Infof("SetInode called %s", c.fileData.Name)
 }
 
 func (c *SamFsFileHandle) Truncate(size uint64) fuse.Status {
-	glog.Info("Truncate called")
+	glog.V(3).Info("Truncate called")
 	return fuse.OK
 }
 
 func (c *SamFsFileHandle) Utimens(atime *time.Time,
 	mtime *time.Time) fuse.Status {
 
-	glog.Infof("Utimens(file) called %s", c.fileData.Name)
+	glog.V(3).Infof("Utimens(file) called %s", c.fileData.Name)
 	return fuse.OK
 }
