@@ -73,7 +73,7 @@ func setup() (*testContext, error) {
 		}
 	}()
 
-	s, serr := NewServer(path.Join(wd, mountDir))
+	s, serr := NewServer(path.Join(wd, mountDir), "24100")
 	if serr != nil {
 		ok = false
 		return nil, serr
