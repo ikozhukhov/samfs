@@ -26,7 +26,7 @@ endif
 
 # development tasks
 test:
-	go test -v $$(go list ./... | grep -v /vendor/)
+	@go test -v $$(go list ./... | grep -v /vendor/)
 
 
 PACKAGES := $(shell find ./* -type d | grep -v vendor)
@@ -49,10 +49,10 @@ CMD_SOURCES := $(shell find src/cmd -name main.go)
 TARGETS := $(patsubst src/cmd/%/main.go,%,$(CMD_SOURCES))
 
 %: src/cmd/%/main.go
-	go build -ldflags "$(LDFLAGS)" -o $@ $<
+	@go build -v -ldflags "$(LDFLAGS)" -o $@ $<
 
 lint:
-	go vet $$(go list ./... | grep -v /vendor/)
+	@go vet $$(go list ./... | grep -v /vendor/)
 
 INSTALLED_TARGETS = $(addprefix $(PREFIX)/bin/, $(TARGETS))
 
@@ -60,18 +60,19 @@ $(PREFIX)/bin/%: %
 	mv $< $@
 
 install_location:
-	mkdir -p $(PREFIX)/bin
-	mkdir -p tools/bin
+	@mkdir -p $(PREFIX)/bin
+	@mkdir -p tools/bin
 
 install: install_location $(INSTALLED_TARGETS)
 
 clean:
-	rm -rf bin
-	rm -rf src/proto/*.pb.go
+	@rm -rf bin
+	@rm -rf src/proto/*.pb.go
 
 proto:
-	#protoc src/proto/*.proto --go_out=plugins=grpc2:.
-	tools/protoc/protoc-3.1.0-$(TOOLSTRING)-x86_64/bin/protoc src/proto/*.proto --go_out=plugins=grpc:.
+	@printf "Compiling protobuf..."
+	@tools/protoc/protoc-3.1.0-$(TOOLSTRING)-x86_64/bin/protoc src/proto/*.proto --go_out=plugins=grpc:.
+	@printf "Done\n"
 
 all: lint proto $(TARGETS) install
 .DEFAULT_GOAL:=all
