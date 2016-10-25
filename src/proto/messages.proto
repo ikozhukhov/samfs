@@ -23,6 +23,7 @@ service NFS {
     rpc Mkdir  (LocalDirectoryRequest)  returns (FileHandleReply) {}
     rpc Rmdir  (LocalDirectoryRequest)  returns (StatusReply) {}
     rpc Rename (RenameRequest) returns (StatusReply) {}
+    //rpc SetAttr (FileHandleRequest) returns (StatusReply) {}
 }
 
 // basic types

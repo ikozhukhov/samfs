@@ -9,6 +9,7 @@ import (
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	pb "github.com/smihir/samfs/src/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 type SamFsFileHandle struct {
@@ -104,7 +105,7 @@ func (c *SamFsFileHandle) Read(buf []byte, off int64) (fuse.ReadResult,
 			FileHandle: fh,
 			Offset:     off,
 			Size:       int64(len(buf)),
-		})
+		}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to write to file "%s" :: %s`, name, err.Error())
 		var nullData []byte
@@ -182,7 +183,7 @@ func (c *SamFsFileHandle) Fsync(flags int) fuse.Status {
 		resp, err = c.fileData.Fs.nfsClient.Commit(context.Background(),
 			&pb.CommitRequest{
 				FileHandle: fh,
-			})
+			}, grpc.FailFast(false))
 		if err != nil {
 			glog.Errorf(`failed to commit to file "%s" :: %s`, c.fileData.Name,
 				err.Error())
@@ -209,7 +210,7 @@ func (c *SamFsFileHandle) Fsync(flags int) fuse.Status {
 		resp, err := c.fileData.Fs.nfsClient.Commit(context.Background(),
 			&pb.CommitRequest{
 				FileHandle: fh,
-			})
+			}, grpc.FailFast(false))
 		if err != nil {
 			glog.Errorf(`failed to recursively commit to file "%s" :: %s`,
 				c.fileData.Name, err.Error())
@@ -238,7 +239,7 @@ func (c *SamFsFileHandle) GetAttr(out *fuse.Attr) fuse.Status {
 	resp, err := c.fileData.Fs.nfsClient.GetAttr(context.Background(),
 		&pb.FileHandleRequest{
 			FileHandle: fh,
-		})
+		}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to get attributes of file "%s" :: %s`, name, err.Error())
 		return fuse.EIO
@@ -303,7 +304,7 @@ func (c *SamFsFileHandle) write(data []byte, offset int64) (*pb.StatusReply,
 			Offset:     offset,
 			Size:       int64(len(data)),
 			Data:       data,
-		})
+		}, grpc.FailFast(false))
 	c.fileData.Unlock()
 
 	return resp, err
