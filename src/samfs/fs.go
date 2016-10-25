@@ -83,7 +83,7 @@ func (c *SamFs) getFileHandle(name string) (*pb.FileHandle, fuse.Status) {
 		resp, err := c.nfsClient.Lookup(context.Background(), &pb.LocalDirectoryRequest{
 			DirectoryFileHandle: parentFh,
 			Name:                fname,
-		})
+		}, grpc.FailFast(false))
 		if err != nil {
 			glog.V(3).Infof(`failed to lookup file "%s" :: %s`, fname, err.Error())
 			// error code 5 implies the file does not exist
@@ -138,7 +138,7 @@ func (c *SamFs) GetAttr(name string, fContext *fuse.Context) (*fuse.Attr,
 	}
 	resp, err := c.nfsClient.GetAttr(context.Background(), &pb.FileHandleRequest{
 		FileHandle: fh,
-	})
+	}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to get attributes of file "%s" :: %s`, name, err.Error())
 		return nil, fuse.EIO
@@ -205,7 +205,7 @@ func (c *SamFs) Rmdir(path string, fContext *fuse.Context) fuse.Status {
 	_, err := c.nfsClient.Rmdir(context.Background(), &pb.LocalDirectoryRequest{
 		DirectoryFileHandle: fh,
 		Name:                name,
-	})
+	}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to remove directory "%s" :: %s`, path, err.Error())
 		return fuse.EIO
@@ -227,7 +227,7 @@ func (c *SamFs) Mkdir(path string, mode uint32,
 	_, err := c.nfsClient.Mkdir(context.Background(), &pb.LocalDirectoryRequest{
 		DirectoryFileHandle: fh,
 		Name:                name,
-	})
+	}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to create directory "%s" :: %s`, path, err.Error())
 		return fuse.EIO
@@ -260,7 +260,7 @@ func (c *SamFs) Rename(oldName string, newName string,
 		FromName:      oName,
 		ToDirHandle:   toFh,
 		ToName:        nName,
-	})
+	}, grpc.FailFast(false))
 
 	if err != nil {
 		glog.Errorf("failed to rename from %s to %s :: %s", oName, nName, err.Error())
@@ -282,7 +282,7 @@ func (c *SamFs) Unlink(name string, fContext *fuse.Context) fuse.Status {
 	_, err := c.nfsClient.Remove(context.Background(), &pb.LocalDirectoryRequest{
 		DirectoryFileHandle: fh,
 		Name:                justName,
-	})
+	}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to remove file "%s" :: %s`, name, err.Error())
 		return fuse.EIO
@@ -320,7 +320,7 @@ func (c *SamFs) ListXAttr(name string, fContext *fuse.Context) ([]string,
 
 func (c *SamFs) OnMount(nodefs *pathfs.PathNodeFs) {
 	glog.V(3).Info("OnMount called")
-	resp, err := c.nfsClient.Mount(context.Background(), &pb.MountRequest{})
+	resp, err := c.nfsClient.Mount(context.Background(), &pb.MountRequest{}, grpc.FailFast(false))
 	if err != nil {
 		glog.Fatalf("failed to mount the remote filesystem :: %s", err.Error())
 		c.clientConn.Close()
@@ -363,7 +363,7 @@ func (c *SamFs) OpenDir(name string, fContext *fuse.Context) ([]fuse.DirEntry,
 	}
 	resp, err := c.nfsClient.Readdir(context.Background(), &pb.FileHandleRequest{
 		FileHandle: fh,
-	})
+	}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to read directory "%s" :: %s`, name, err.Error())
 		return nil, fuse.EBUSY
@@ -392,7 +392,7 @@ func (c *SamFs) Create(name string, flags uint32, mode uint32,
 	resp, err := c.nfsClient.Create(context.Background(), &pb.LocalDirectoryRequest{
 		DirectoryFileHandle: fh,
 		Name:                justName,
-	})
+	}, grpc.FailFast(false))
 	if err != nil {
 		glog.Errorf(`failed to create file "%s" :: %s`, name, err.Error())
 		return nil, fuse.EIO
