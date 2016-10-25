@@ -48,7 +48,7 @@ type SamFSServer struct {
 	//it is used to detect server crashes
 	sessionID int64
 
-	info serverInfo
+	info *serverInfo
 	tick *time.Ticker
 }
 
@@ -74,6 +74,7 @@ func NewServer(rootDirectory string, port string) (*SamFSServer, error) {
 		// TODO(mihir): make port number configurable
 		port: ":" + port,
 		tick: time.NewTicker(10 * time.Second),
+		info: &serverInfo{},
 	}
 	go func() {
 		for _ = range s.tick.C {
