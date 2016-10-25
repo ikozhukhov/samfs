@@ -22,6 +22,21 @@ const (
 	defaultPermission os.FileMode = 0766
 )
 
+type serverInfo struct {
+	commitCount  uint64
+	createCount  uint64
+	lookupCount  uint64
+	mkdirCount   uint64
+	mountCount   uint64
+	readCount    uint64
+	readDirCount uint64
+	removeCount  uint64
+	renameCount  uint64
+	writeCount   uint64
+	getAttrCount uint64
+	rmDirCount   uint64
+}
+
 type SamFSServer struct {
 	rootDirectory  string
 	rootFileHandle *pb.FileHandle
@@ -32,6 +47,9 @@ type SamFSServer struct {
 	//sessionID is randomly generated every time server starts;
 	//it is used to detect server crashes
 	sessionID int64
+
+	info serverInfo
+	tick *time.Ticker
 }
 
 var _ pb.NFSServer = &SamFSServer{}
@@ -55,7 +73,13 @@ func NewServer(rootDirectory string, port string) (*SamFSServer, error) {
 		rootFileHandle: rootFileHandle,
 		// TODO(mihir): make port number configurable
 		port: ":" + port,
+		tick: time.NewTicker(10 * time.Second),
 	}
+	go func() {
+		for _ = range s.tick.C {
+			glog.Infof("%+v", s.info)
+		}
+	}()
 
 	return s, nil
 }
@@ -80,6 +104,7 @@ func (s *SamFSServer) Run() error {
 
 func (s *SamFSServer) Stop() error {
 	s.grpcServer.GracefulStop()
+	s.tick.Stop()
 	return nil
 }
 
@@ -97,6 +122,7 @@ func (s *SamFSServer) Mount(ctx context.Context,
 func (s *SamFSServer) Lookup(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
 	glog.V(3).Infof(`received lookup request for "%s"`, req.Name)
+	s.info.lookupCount++
 
 	//validate incoming directory file handle
 	err := s.verifyFileHandle(req.DirectoryFileHandle)
@@ -132,6 +158,7 @@ func (s *SamFSServer) Lookup(ctx context.Context,
 func (s *SamFSServer) GetAttr(ctx context.Context,
 	req *pb.FileHandleRequest) (*pb.GetAttrReply, error) {
 	glog.V(3).Infof(`received GetAttr request for "%s"`, req.FileHandle.Path)
+	s.info.getAttrCount++
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -170,6 +197,7 @@ func (s *SamFSServer) Readdir(ctx context.Context,
 	req *pb.FileHandleRequest) (*pb.ReaddirReply, error) {
 	glog.V(3).Infof("received Readdir request root: %s, path: %s", s.rootDirectory,
 		req.FileHandle.Path)
+	s.info.readDirCount++
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -210,6 +238,7 @@ func (s *SamFSServer) Readdir(ctx context.Context,
 func (s *SamFSServer) Read(ctx context.Context,
 	req *pb.ReadRequest) (*pb.ReadReply, error) {
 	glog.V(3).Info("received read request")
+	s.info.readCount++
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -250,6 +279,7 @@ func (s *SamFSServer) Read(ctx context.Context,
 func (s *SamFSServer) Write(ctx context.Context,
 	req *pb.WriteRequest) (*pb.StatusReply, error) {
 	glog.V(3).Info("recevied write request")
+	s.info.writeCount++
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -293,6 +323,7 @@ func (s *SamFSServer) Write(ctx context.Context,
 func (s *SamFSServer) Commit(ctx context.Context,
 	req *pb.CommitRequest) (*pb.StatusReply, error) {
 	glog.V(3).Info("recevied commit request")
+	s.info.commitCount++
 
 	//validate incoming file handle
 	err := s.verifyFileHandle(req.FileHandle)
@@ -328,6 +359,7 @@ func (s *SamFSServer) Create(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
 	glog.V(3).Infof("recevied create request root: %s, path: %s", s.rootDirectory,
 		req.DirectoryFileHandle.Path)
+	s.info.createCount++
 
 	//validate incoming directory file handle
 	err := s.verifyFileHandle(req.DirectoryFileHandle)
@@ -379,12 +411,14 @@ func (s *SamFSServer) Create(ctx context.Context,
 func (s *SamFSServer) Remove(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
 	glog.V(3).Info("recevied remove request")
+	s.info.removeCount++
 	return s.remove(ctx, req)
 }
 
 func (s *SamFSServer) Mkdir(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.FileHandleReply, error) {
 	glog.V(3).Info("recevied mkdir request")
+	s.info.mkdirCount++
 
 	//validate incoming directory file handle
 	err := s.verifyFileHandle(req.DirectoryFileHandle)
@@ -435,12 +469,14 @@ func (s *SamFSServer) Mkdir(ctx context.Context,
 func (s *SamFSServer) Rmdir(ctx context.Context,
 	req *pb.LocalDirectoryRequest) (*pb.StatusReply, error) {
 	glog.V(3).Info("recevied Rmdir request")
+	s.info.rmDirCount++
 	return s.remove(ctx, req)
 }
 
 func (s *SamFSServer) Rename(ctx context.Context,
 	req *pb.RenameRequest) (*pb.StatusReply, error) {
 	glog.V(3).Info("received Rename request from %s to %s", req.FromName, req.ToName)
+	s.info.renameCount++
 	//validating incoming directory file handle
 	fromErr := s.verifyFileHandle(req.FromDirHandle)
 	if fromErr != nil {
