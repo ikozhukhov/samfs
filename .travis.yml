@@ -5,7 +5,6 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install tree -y ; fi
 os:
 - linux
-- osx
 go:
 - 1.7.1
 install:
