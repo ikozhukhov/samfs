@@ -554,7 +554,7 @@ func (s *SamFSServer) verifyFileHandle(fileHandle *pb.FileHandle) error {
 		return err
 	}
 
-	if inum != fileHandle.InodeNumber && gnum != fileHandle.GenerationNumber {
+	if inum != fileHandle.InodeNumber || gnum != fileHandle.GenerationNumber {
 		errStr := fmt.Sprintf("file handle for %s is not valid\n", fileHandle.Path)
 		glog.Errorf(errStr)
 		return errors.New(errStr)
